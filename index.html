@@ -24,7 +24,7 @@
 
 <div class="container">
     <div class="card">
-        <h2>💕 新增支出</h2>
+        <h2>💕 新增支出 💕</h2>
         <select id="payer"><option value="小精靈">小精靈</option><option value="西瓜">西瓜</option></select>
         <input id="title" placeholder="項目">
         <input id="amount" type="number" placeholder="金額">
@@ -46,6 +46,7 @@
         <button id="addBtn">確認新增</button>
     </div>
     <div class="card">
+        <div id="stats-board" style="margin-bottom: 15px;"></div>
         <h3>📊 支出紀錄</h3>
         <div id="list">正在同步資料...</div>
     </div>
@@ -66,10 +67,79 @@
         if (window.supabase && window.supabase.createClient) {
             client = window.supabase.createClient(SB_URL, SB_KEY);
             return client;
+            showStatistics();
         }
         return null;
     }
 
+    // 計算本月與上月範圍
+    function getDateRanges() {
+        const now = new Date();
+        const startThis = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const startLast = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+        const endLast = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString();
+        return { startThis, startLast, endLast };
+    }
+
+    // 核心功能：讀取資料與統計
+    async function refreshApp() {
+        const client = getClient();
+        if (!client) {
+            setTimeout(refreshApp, 500);
+            return;
+        }
+
+        try {
+            // 1. 抓取全部紀錄顯示在清單
+            const { data: allData, error: err1 } = await client.from('expenses').select('*').order('created_at', { ascending: false });
+            if (err1) throw err1;
+
+            const listDiv = document.getElementById('list');
+            listDiv.innerHTML = allData.length === 0 ? "目前沒有紀錄。" : allData.map(item => `
+                <div class="record-item">
+                    <div>
+                        <span class="tag ${item.payer === '小精靈' ? 'tag-elf' : 'tag-water'}">${item.payer}</span>
+                        <span class="tag ${item.need_type === '必要花費' ? 'tag-need' : 'tag-want'}">${item.need_type}</span>
+                        <b>${item.title}</b>
+                        <small style="color:#999">${item.category} | ${new Date(item.created_at).toLocaleDateString()}</small>
+                    </div>
+                    <div style="font-weight:bold; color:#cb457e;">$${item.amount}</div>
+                </div>
+            `).join('');
+
+            // 2. 統計數據
+            const { startThis, startLast, endLast } = getDateRanges();
+            const { data: thisMonthData } = await client.from('expenses').select('payer, amount').gte('created_at', startThis);
+            const { data: lastMonthData } = await client.from('expenses').select('payer, amount').gte('created_at', startLast).lte('created_at', endLast);
+
+            const calc = (data) => {
+                let res = { "小精靈": 0, "西瓜": 0 };
+                (data || []).forEach(i => { if(res[i.payer]!==undefined) res[i.payer]+=i.amount; });
+                return res;
+            };
+
+            const thisT = calc(thisMonthData);
+            const lastT = calc(lastMonthData);
+
+            let winner = "👑 上月省錢王：";
+            if (lastT["小精靈"] < lastT["西瓜"]) winner += "小精靈";
+            else if (lastT["西瓜"] < lastT["小精靈"]) winner += "西瓜";
+            else winner = "🤝 上月平手！";
+
+            document.getElementById('stats-board').innerHTML = `
+                <h4 style="margin:0 0 10px 0; color:#df4d8f;">📅 本月累計</h4>
+                <div style="display:flex; justify-content: space-around; font-size:15px; margin-bottom:8px;">
+                    <span>🧚 小精靈: <b>$${thisT["小精靈"]}</b></span>
+                    <span>🍉 西瓜: <b>$${thisT["西瓜"]}</b></span>
+                </div>
+                <div style="font-size:12px; color:#888; border-top:1px solid #ffdae9; padding-top:8px;">${winner}</div>
+            `;
+
+        } catch (e) {
+            console.error(e);
+        }
+    }
+    
     async function loadData() {
         const listDiv = document.getElementById('list');
         const supabase = getClient();
@@ -111,6 +181,8 @@
         const t = document.getElementById('title').value;
         const a = document.getElementById('amount').value;
         if (!t || !a) return alert("請填寫內容");
+        // 關鍵：在這裡呼叫，讓畫面上的數字立刻變動！
+        refreshApp();
 
         const btn = document.getElementById('addBtn');
         btn.disabled = true;

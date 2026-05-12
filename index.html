@@ -3,48 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💕 小精靈 & 西瓜 記帳本 💕</title>
-    <script src="https://unpkg.com/@myApp/myApp-js@2"></script>
+    <title>💕 小精靈 & 西瓜 專屬記帳本 💕</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; background: #ffe3ef; padding: 20px; color: #6d2942; text-align: center; }
-        .container { max-width: 500px; margin: auto; }
-        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2, h3 { margin-top: 0; color: #df4d8f; }
-        label { display: block; text-align: left; margin-top: 10px; font-size: 14px; font-weight: bold; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 1px solid #f3a9c6; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; }
-        button:disabled { background: #ccc; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #ffe3ef; padding: 15px; color: #6d2942; margin: 0; }
+        .container { max-width: 450px; margin: auto; }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; }
+        h2 { margin: 0 0 15px 0; color: #df4d8f; font-size: 22px; }
+        label { display: block; text-align: left; margin-top: 12px; font-size: 14px; font-weight: bold; color: #a35d78; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 1px solid #f3a9c6; box-sizing: border-box; font-size: 16px; outline: none; }
+        input:focus { border-color: #ff6fa9; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        
+        /* 紀錄清單樣式 */
         .record-item { background: #fff2f8; border-radius: 15px; padding: 15px; margin-top: 12px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; text-align: left; }
-        .record-info b { font-size: 17px; display: block; margin-top: 5px; }
-        .amount { font-size: 20px; font-weight: bold; color: #cb457e; }
-        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 5px; color: white; font-weight: bold; }
-        .tag-need { background: #ff97be; }
-        .tag-want { background: #ffcb97; }
-        .tag-elf { background: #ff6fa9; }
-        .tag-watermelon { background: #4da6ff; }
+        .record-info b { font-size: 17px; display: block; margin: 3px 0; color: #444; }
+        .record-info small { color: #999; font-size: 12px; }
+        .amount { font-size: 19px; font-weight: bold; color: #cb457e; }
+        
+        /* 標籤樣式 */
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 4px; color: white; font-weight: bold; }
+        .tag-need { background: #ff97be; } /* 必要 */
+        .tag-want { background: #ffcb97; } /* 想要 */
+        .tag-elf { background: #ff6fa9; }  /* 小精靈顏色 */
+        .tag-water { background: #4da6ff; } /* 西瓜顏色 */
+        
+        #list-status { font-size: 14px; color: #a35d78; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <h2>💕 新增支出</h2>
+        <h2>💕 新增支出紀錄</h2>
         
-        <label>付款人</label>
+        <label>誰付錢</label>
         <select id="payer">
             <option value="小精靈">小精靈</option>
             <option value="西瓜">西瓜</option>
         </select>
 
-        <input id="title" placeholder="買了什麼？">
-        <input id="amount" type="number" placeholder="多少錢？">
+        <label>項目名稱</label>
+        <input id="title" type="text" placeholder="例如：好吃的晚餐">
 
-        <label>項目分類</label>
+        <label>花費金額</label>
+        <input id="amount" type="number" inputmode="decimal" placeholder="0">
+
+        <label>分類</label>
         <select id="category">
             <option value="餐飲">🍔 餐飲</option>
             <option value="交通">🚗 交通</option>
             <option value="購物">🛍️ 購物</option>
-            <option value="住宿">🏠 住宿</option>
             <option value="狗勾">🐶 狗勾</option>
             <option value="其他">✨ 其他</option>
         </select>
@@ -59,62 +69,83 @@
     </div>
 
     <div class="card">
-        <h3>📊 支出紀錄</h3>
-        <div id="list">正在連線資料庫...</div>
+        <h3>📊 最近支出紀錄</h3>
+        <div id="list-status">正在連線資料庫...</div>
+        <div id="record-list"></div>
     </div>
 </div>
 
 <script>
-    // 使用唯一的變數名稱，徹底避免 Declared 錯誤
-    const CONFIG_URL = "https://dfflacypaegfmgstwzeb.myApp.co";
-    const CONFIG_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
-    const myAppClient = window.myApp.createClient(CONFIG_URL, CONFIG_KEY);
+    // --- 配置與變數 ---
+    const CONFIG = {
+        URL: "https://dfflacypaegfmgstwzeb.supabase.co",
+        KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ"
+    };
+    
+    let dbClient = null;
 
-    async function refreshRecords() {
-    async function refreshRecords() {
-    const listDiv = document.getElementById('list');
-    try {
-        const { data, error } = await myAppClient.from('expenses').select('*').order('created_at', { ascending: false });
-        
-        if (error) {
-            // 如果連線失敗，這裡會顯示原因，例如：Network Error 或 JWT expired
-            listDiv.innerHTML = `<b style="color:red">連線失敗：${error.message}</b>`;
-            return;
+    // --- 初始化連線 (針對手機載入優化) ---
+    function initConnection() {
+        if (window.supabase) {
+            dbClient = window.supabase.createClient(CONFIG.URL, CONFIG.KEY);
+            return true;
         }
-
-        if (!data || data.length === 0) {
-            listDiv.innerHTML = "目前沒有紀錄。";
-            return;
-        }
-
-        // ...原本渲染紀錄的代碼...
-        listDiv.innerHTML = data.map(item => `<div>${item.title}: $${item.amount}</div>`).join('');
-
-    } catch (err) {
-        // 如果連程式碼都跑不動，會跳這個
-        listDiv.innerHTML = `<b style="color:red">執行錯誤：${err.message}</b>`;
+        return false;
     }
-}
-        listDiv.innerHTML = data.map(item => {
-            const typeClass = item.need_type === '必要花費' ? 'tag-need' : 'tag-want';
-            const payerClass = item.payer === '小精靈' ? 'tag-elf' : 'tag-watermelon';
-            return `
-                <div class="record-item">
-                    <div class="record-info">
-                        <div>
-                            <span class="tag ${payerClass}">${item.payer}</span>
-                            <span class="tag ${typeClass}">${item.need_type}</span>
+
+    // --- 抓取並顯示紀錄 ---
+    async function loadRecords() {
+        // 如果 SDK 還沒載入好，就等一下再試
+        if (!dbClient && !initConnection()) {
+            setTimeout(loadRecords, 500);
+            return;
+        }
+
+        const statusText = document.getElementById('list-status');
+        const listDiv = document.getElementById('record-list');
+
+        try {
+            const { data, error } = await dbClient.from('expenses').select('*').order('created_at', { ascending: false });
+            
+            if (error) throw error;
+
+            statusText.style.display = "none"; // 隱藏狀態文字
+            
+            if (!data || data.length === 0) {
+                listDiv.innerHTML = "<p>目前還沒有任何紀錄喔！</p>";
+                return;
+            }
+
+            listDiv.innerHTML = data.map(item => {
+                const typeClass = item.need_type === '必要花費' ? 'tag-need' : 'tag-want';
+                const payerClass = item.payer === '小精靈' ? 'tag-elf' : 'tag-water';
+                return `
+                    <div class="record-item">
+                        <div class="record-info">
+                            <div>
+                                <span class="tag ${payerClass}">${item.payer}</span>
+                                <span class="tag ${typeClass}">${item.need_type}</span>
+                            </div>
+                            <b>${item.title}</b>
+                            <small>${item.category} | ${new Date(item.created_at).toLocaleDateString()}</small>
                         </div>
-                        <b>${item.title}</b>
-                        <small style="color:#999">${item.category} | ${new Date(item.created_at).toLocaleDateString()}</small>
+                        <div class="amount">$${item.amount}</div>
                     </div>
-                    <div class="amount">$${item.amount}</div>
-                </div>
-            `;
-        }).join('');
+                `;
+            }).join('');
+
+        } catch (err) {
+            statusText.innerHTML = `<b style="color:red">連線失敗：${err.message}</b>`;
+        }
     }
 
+    // --- 按鈕點擊動作 ---
     document.getElementById('addBtn').onclick = async () => {
+        if (!dbClient) {
+            alert("系統正在啟動中，請等一下再試！");
+            return;
+        }
+
         const title = document.getElementById('title').value;
         const amount = document.getElementById('amount').value;
         const payer = document.getElementById('payer').value;
@@ -122,7 +153,7 @@
         const need_type = document.getElementById('need_type').value;
 
         if (!title || !amount) {
-            alert("請填寫完整資訊！");
+            alert("項目名稱和金額都要填寫喔！");
             return;
         }
 
@@ -130,29 +161,32 @@
         btn.disabled = true;
         btn.innerText = "儲存中...";
 
-        const { error } = await myAppClient.from('expenses').insert([{
-            title: title,
-            amount: Number(amount),
-            payer: payer,
-            category: category,
-            need_type: need_type
-        }]);
+        try {
+            const { error } = await dbClient.from('expenses').insert([{
+                title: title,
+                amount: Number(amount),
+                payer: payer,
+                category: category,
+                need_type: need_type
+            }]);
 
-        if (error) {
-            alert("儲存失敗: " + error.message);
-        } else {
-            alert("✨ 新增成功！");
+            if (error) throw error;
+
+            alert("✨ 紀錄成功！");
             document.getElementById('title').value = "";
             document.getElementById('amount').value = "";
-            refreshRecords();
+            loadRecords(); // 重新整理列表
+
+        } catch (err) {
+            alert("新增失敗：" + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "確認新增紀錄";
         }
-        
-        btn.disabled = false;
-        btn.innerText = "確認新增紀錄";
     };
 
-    // 啟動載入
-    refreshRecords();
+    // --- 網頁載入後啟動 ---
+    window.onload = loadRecords;
 </script>
 
 </body>

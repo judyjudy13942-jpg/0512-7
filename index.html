@@ -6,21 +6,22 @@
     <title>💕 小精靈 & 西瓜 記帳本 💕</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; background: #ffe3ef; padding: 20px; color: #6d2942; }
+        body { font-family: sans-serif; background: #ffe3ef; padding: 20px; color: #6d2942; text-align: center; }
         .container { max-width: 500px; margin: auto; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2, h3 { margin-top: 0; color: #df4d8f; }
         label { display: block; text-align: left; margin-top: 10px; font-size: 14px; font-weight: bold; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 1px solid #f3a9c6; box-sizing: border-box; font-size: 16px; }
         button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; }
-        button:active { transform: scale(0.98); }
+        button:disabled { background: #ccc; }
         .record-item { background: #fff2f8; border-radius: 15px; padding: 15px; margin-top: 12px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; text-align: left; }
-        .record-info b { font-size: 18px; }
-        .record-info span { font-size: 12px; color: #999; display: block; }
+        .record-info b { font-size: 17px; display: block; margin-top: 5px; }
         .amount { font-size: 20px; font-weight: bold; color: #cb457e; }
-        .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 5px; color: white; }
-        .tag-need { background: #ff97be; } /* 必要 */
-        .tag-want { background: #ffcb97; } /* 想要 */
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 5px; color: white; font-weight: bold; }
+        .tag-need { background: #ff97be; }
+        .tag-want { background: #ffcb97; }
+        .tag-elf { background: #ff6fa9; }
+        .tag-watermelon { background: #4da6ff; }
     </style>
 </head>
 <body>
@@ -35,11 +36,8 @@
             <option value="西瓜">西瓜</option>
         </select>
 
-        <label>項目名稱</label>
         <input id="title" placeholder="買了什麼？">
-
-        <label>金額</label>
-        <input id="amount" type="number" placeholder="0">
+        <input id="amount" type="number" placeholder="多少錢？">
 
         <label>項目分類</label>
         <select id="category">
@@ -62,49 +60,49 @@
 
     <div class="card">
         <h3>📊 支出紀錄</h3>
-        <div id="list">讀取中...</div>
+        <div id="list">正在連線資料庫...</div>
     </div>
 </div>
 
 <script>
-    const SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
-    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
-    const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+    // 使用唯一的變數名稱，徹底避免 Declared 錯誤
+    const CONFIG_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
+    const CONFIG_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
+    const myAppClient = window.supabase.createClient(CONFIG_URL, CONFIG_KEY);
 
-    async function loadData() {
-    const { data, error } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
-    const listDiv = document.getElementById('list');
-    
-    if (error) {
-        listDiv.innerText = "載入失敗：" + error.message;
-        return;
-    }
+    async function refreshRecords() {
+        const { data, error } = await myAppClient.from('expenses').select('*').order('created_at', { ascending: false });
+        const listDiv = document.getElementById('list');
+        
+        if (error) {
+            listDiv.innerText = "讀取失敗: " + error.message;
+            return;
+        }
 
-    if (data.length === 0) {
-        listDiv.innerHTML = "目前還沒有紀錄喔！";
-    } else {
+        if (!data || data.length === 0) {
+            listDiv.innerHTML = "目前沒有任何紀錄。";
+            return;
+        }
+
         listDiv.innerHTML = data.map(item => {
-            // 根據付款人顯示不同顏色的小標籤，一眼看出是誰花的
-            const payerColor = item.payer === '小精靈' ? '#ff6fa9' : '#4da6ff';
             const typeClass = item.need_type === '必要花費' ? 'tag-need' : 'tag-want';
-            
+            const payerClass = item.payer === '小精靈' ? 'tag-elf' : 'tag-watermelon';
             return `
                 <div class="record-item">
                     <div class="record-info">
-                        <div style="margin-bottom: 5px;">
+                        <div>
+                            <span class="tag ${payerClass}">${item.payer}</span>
                             <span class="tag ${typeClass}">${item.need_type}</span>
-                            <span class="tag" style="background: ${payerColor};">${item.payer}</span>
                         </div>
                         <b>${item.title}</b>
-                        <span style="font-size: 12px; color: #999;">分類：${item.category} | 日期：${new Date(item.created_at).toLocaleDateString()}</span>
+                        <small style="color:#999">${item.category} | ${new Date(item.created_at).toLocaleDateString()}</small>
                     </div>
                     <div class="amount">$${item.amount}</div>
                 </div>
             `;
         }).join('');
     }
-}
-    
+
     document.getElementById('addBtn').onclick = async () => {
         const title = document.getElementById('title').value;
         const amount = document.getElementById('amount').value;
@@ -113,14 +111,15 @@
         const need_type = document.getElementById('need_type').value;
 
         if (!title || !amount) {
-            alert("項目和金額都要填寫喔！");
+            alert("請填寫完整資訊！");
             return;
         }
 
-        document.getElementById('addBtn').innerText = "儲存中...";
-        document.getElementById('addBtn').disabled = true;
+        const btn = document.getElementById('addBtn');
+        btn.disabled = true;
+        btn.innerText = "儲存中...";
 
-        const { error } = await supabase.from('expenses').insert([{
+        const { error } = await myAppClient.from('expenses').insert([{
             title: title,
             amount: Number(amount),
             payer: payer,
@@ -129,20 +128,20 @@
         }]);
 
         if (error) {
-            alert("失敗了：" + error.message);
+            alert("儲存失敗: " + error.message);
         } else {
-            alert("✨ 紀錄成功！");
+            alert("✨ 新增成功！");
             document.getElementById('title').value = "";
             document.getElementById('amount').value = "";
-            loadData(); // 重新整理清單
+            refreshRecords();
         }
         
-        document.getElementById('addBtn').innerText = "確認新增紀錄";
-        document.getElementById('addBtn').disabled = false;
+        btn.disabled = false;
+        btn.innerText = "確認新增紀錄";
     };
 
-    // 頁面開啟時先跑一次
-    loadData();
+    // 啟動載入
+    refreshRecords();
 </script>
 
 </body>

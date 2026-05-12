@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>💕 小精靈 & 西瓜 記帳本 💕</title>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@myApp/myApp-js@2"></script>
     <style>
         body { font-family: sans-serif; background: #ffe3ef; padding: 20px; color: #6d2942; text-align: center; }
         .container { max-width: 500px; margin: auto; }
@@ -66,9 +66,9 @@
 
 <script>
     // 使用唯一的變數名稱，徹底避免 Declared 錯誤
-    const CONFIG_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
+    const CONFIG_URL = "https://dfflacypaegfmgstwzeb.myApp.co";
     const CONFIG_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
-    const myAppClient = window.supabase.createClient(CONFIG_URL, CONFIG_KEY);
+    const myAppClient = window.myApp.createClient(CONFIG_URL, CONFIG_KEY);
 
     async function refreshRecords() {
         const { data, error } = await myAppClient.from('expenses').select('*').order('created_at', { ascending: false });

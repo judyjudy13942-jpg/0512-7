@@ -1,14 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💕 小精靈 & 西瓜 專屬記帳本 💕</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #ffe3ef; padding: 15px; color: #6d2942; margin: 0; }
+        .container { max-width: 450px; margin: auto; }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; }
+        h2, h3 { margin: 0 0 15px 0; color: #df4d8f; font-size: 20px; }
+        label { display: block; text-align: left; margin-top: 12px; font-size: 14px; font-weight: bold; color: #a35d78; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 1px solid #f3a9c6; box-sizing: border-box; font-size: 16px; outline: none; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+        button:disabled { background: #ccc; }
+        
+        /* 統計看板樣式 */
+        #stats-board { background: #fff; border: 2px dashed #ff97be; border-radius: 20px; padding: 15px; }
+        .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; margin: 5px 0; }
+        .sub-stats { display: flex; justify-content: space-around; margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; }
+        .winner-tag { font-size: 12px; color: #888; margin-top: 10px; background: #fff2f8; padding: 5px; border-radius: 10px; }
+
+        /* 紀錄清單樣式 */
+        .record-item { background: #fff2f8; border-radius: 15px; padding: 15px; margin-top: 12px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; text-align: left; }
+        .record-info b { font-size: 17px; display: block; margin: 3px 0; color: #444; }
+        .record-info small { color: #999; font-size: 12px; }
+        .amount-text { font-size: 18px; font-weight: bold; color: #cb457e; }
+        
+        /* 標籤樣式 */
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 4px; color: white; font-weight: bold; }
+        .tag-need { background: #ff97be; }
+        .tag-want { background: #ffcb97; }
+        .tag-elf { background: #ff6fa9; }
+        .tag-water { background: #4da6ff; }
+    </style>
+</head>
+<body>
+
 <div class="container">
     <div class="card">
-        <h2>💕 新增支出</h2>
+        <h2>💕 新增支出紀錄 💕</h2>
         <label>誰付錢</label>
         <select id="payer">
             <option value="小精靈">小精靈</option>
             <option value="西瓜">西瓜</option>
         </select>
 
-        <input id="title" placeholder="項目名稱">
-        <input id="amount" type="number" inputmode="decimal" placeholder="金額">
+        <label>項目名稱</label>
+        <input id="title" type="text" placeholder="例如：好吃的晚餐">
+
+        <label>花費金額</label>
+        <input id="amount" type="number" inputmode="decimal" placeholder="0">
 
         <label>分類</label>
         <select id="category">
@@ -28,15 +70,62 @@
             <option value="想要花費">🎁 想要花費</option>
         </select>
 
-        <button id="addBtn">確認新增</button>
+        <button id="addBtn">確認新增紀錄</button>
     </div>
 
     <div class="card" id="stats-board">
-        <p style="color: #999;">正在計算本月數據...</p>
+        <p style="color: #999;">正在連線計算中...</p>
     </div>
 
     <div class="card">
         <h3>📊 支出紀錄清單</h3>
-        <div id="list">正在載入紀錄...</div>
+        <div id="list-status" style="font-size: 14px; color: #999;">資料載入中...</div>
+        <div id="record-list"></div>
     </div>
 </div>
+
+<script>
+    const CONFIG = {
+        URL: "https://dfflacypaegfmgstwzeb.supabase.co",
+        KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ"
+    };
+    
+    let dbClient = null;
+
+    // 安全初始化連線
+    function getDbClient() {
+        if (dbClient) return dbClient;
+        if (window.supabase && window.supabase.createClient) {
+            dbClient = window.supabase.createClient(CONFIG.URL, CONFIG.KEY);
+            return dbClient;
+        }
+        return null;
+    }
+
+    // 日期範圍工具
+    function getDates() {
+        const now = new Date();
+        const startThis = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const startLast = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+        const endLast = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString();
+        return { startThis, startLast, endLast };
+    }
+
+    // 核心更新功能
+    async function refreshApp() {
+        const client = getDbClient();
+        if (!client) {
+            setTimeout(refreshApp, 500);
+            return;
+        }
+
+        try {
+            const { startThis, startLast, endLast } = getDates();
+
+            // 1. 抓取本月資料 (用於統計看板)
+            const { data: thisMonthData } = await client.from('expenses').select('*').gte('created_at', startThis);
+            
+            // 2. 抓取上月資料 (用於省錢王)
+            const { data: lastMonthData } = await client.from('expenses').select('*').gte('created_at', startLast).lte('created_at', endLast);
+
+            // 3. 抓取全部資料 (

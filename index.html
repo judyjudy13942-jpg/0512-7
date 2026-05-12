@@ -6,77 +6,82 @@
     <title>💕 小精靈 & 西瓜 記帳本 💕</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #ffe3ef; padding: 20px; color: #6d2942; }
-        .container { max-width: 500px; margin: auto; }
-        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px; border: 1px solid #f3a9c6; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; cursor: pointer; }
-        .record { background: #fff2f8; border-radius: 15px; padding: 15px; margin-top: 10px; display: flex; justify-content: space-between; }
+        body { font-family: sans-serif; background: #ffe3ef; padding: 20px; text-align: center; color: #6d2942; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: #ff6fa9; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .record { text-align: left; background: #fff2f8; padding: 10px; margin-top: 10px; border-radius: 10px; border-left: 5px solid #ff6fa9; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
 
-<div class="container">
     <div class="card">
-        <h3>新增支出</h3>
+        <h2>💕 記帳本 💕</h2>
         <select id="payer"><option value="小精靈">小精靈</option><option value="西瓜">西瓜</option></select>
         <input id="title" placeholder="項目">
         <input id="amount" type="number" placeholder="金額">
         <button id="addBtn">確認新增</button>
-    </div>
-
-    <div class="card">
+        <hr>
         <h3>支出紀錄</h3>
-        <div id="list">正在連線資料庫...</div>
+        <div id="list">正在同步資料庫...</div>
     </div>
-</div>
 
 <script>
-// 使用 var 且先檢查，避免重複定義報錯
-if (typeof mySupabase === 'undefined') {
-    var SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
-    var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
-    var mySupabase = window.supabase.createClient(SB_URL, SB_KEY);
-}
+    // --- 這裡開始是唯一的 Script 區塊，請確保整份檔案只有這一個 <script> ---
+    const SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
+    
+    // 只定義一次！
+    const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-async function loadData() {
-    try {
-        const { data, error } = await mySupabase.from('expenses').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        
-        const listDiv = document.getElementById('list');
-        if (data && data.length > 0) {
-            listDiv.innerHTML = data.map(item => `<div>${item.title}: $${item.amount}</div>`).join('');
-        } else {
-            listDiv.innerHTML = "目前沒有資料。";
+    async function loadData() {
+        const { data, error } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
+        if (error) {
+            document.getElementById('list').innerText = "讀取失敗：" + error.message;
+            return;
         }
-    } catch (e) {
-        console.error("載入失敗:", e.message);
+        const listDiv = document.getElementById('list');
+        if (!data || data.length === 0) {
+            listDiv.innerHTML = "目前沒有紀錄。";
+        } else {
+            listDiv.innerHTML = data.map(item => `
+                <div class="record">
+                    <span><b>${item.title}</b> (${item.payer})</span>
+                    <span>$${item.amount}</span>
+                </div>
+            `).join('');
+        }
     }
-}
 
-// 綁定按鈕
-document.getElementById('addBtn').onclick = async () => {
-    const title = document.getElementById('title').value;
-    const amount = document.getElementById('amount').value;
-    if(!title || !amount) return;
+    document.getElementById('addBtn').onclick = async () => {
+        const t = document.getElementById('title').value;
+        const a = document.getElementById('amount').value;
+        if(!t || !a) return alert("要填寫喔！");
 
-    const { error } = await mySupabase.from('expenses').insert([{
-        title: title,
-        amount: Number(amount),
-        payer: document.getElementById('payer').value,
-        category: "其他",
-        need_type: "必要"
-    }]);
+        const btn = document.getElementById('addBtn');
+        btn.disabled = true;
+        btn.innerText = "儲存中...";
 
-    if(error) alert(error.message);
-    else {
-        alert("新增成功！");
-        loadData();
-    }
-};
+        const { error } = await supabase.from('expenses').insert([{
+            title: t,
+            amount: Number(a),
+            payer: document.getElementById('payer').value,
+            category: "其他",
+            need_type: "必要"
+        }]);
 
-loadData();
+        if (error) alert("錯誤：" + error.message);
+        else {
+            alert("✨ 新增成功！");
+            document.getElementById('title').value = "";
+            document.getElementById('amount').value = "";
+            loadData();
+        }
+        btn.disabled = false;
+        btn.innerText = "確認新增";
+    };
+
+    loadData();
 </script>
 </body>
 </html>

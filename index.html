@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💕 小精靈 & 西瓜 記帳本 💕</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #ffe3ef; padding: 20px; color: #6d2942; }
+        .container { max-width: 500px; margin: auto; }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px; border: 1px solid #f3a9c6; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; cursor: pointer; }
+        .record { background: #fff2f8; border-radius: 15px; padding: 15px; margin-top: 10px; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h3>新增支出</h3>
+        <select id="payer"><option value="小精靈">小精靈</option><option value="西瓜">西瓜</option></select>
+        <input id="title" placeholder="項目">
+        <input id="amount" type="number" placeholder="金額">
+        <button id="addBtn">確認新增</button>
+    </div>
+
+    <div class="card">
+        <h3>支出紀錄</h3>
+        <div id="list">正在連線資料庫...</div>
+    </div>
+</div>
+
+<script>
+    const SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
+    
+    // 建立連線 (確保只初始化一次)
+    const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+
+    async function loadData() {
+        const listDiv = document.getElementById('list');
+        try {
+            const { data, error } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
+            
+            if (error) {
+                listDiv.innerHTML = "<b style='color:red;'>連線失敗：" + error.message + "</b>";
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                listDiv.innerHTML = "目前沒有紀錄。";
+            } else {
+                listDiv.innerHTML = data.map(item => `
+                    <div class="record">
+                        <span><b>${item.title}</b> (${item.payer})</span>
+                        <span>$${item.amount}</span>
+                    </div>
+                `).join('');
+            }
+        } catch (err) {
+            listDiv.innerHTML = "<b style='color:red;'>執行錯誤：" + err.message + "</b>";
+        }
+    }
+
+    document.getElementById('addBtn').onclick = async () => {
+        const t = document.getElementById('title').value;
+        const a = document.getElementById('amount').value;
+        if(!t || !a) return alert("請填寫內容");
+
+        const { error } = await supabase.from('expenses').insert([{
+            title: t, amount: Number(a), payer: document.getElementById('payer').value, category: "其他", need_type: "必要"
+        }]);
+
+        if(error) alert("新增失敗：" + error.message);
+        else {
+            alert("新增成功！");
+            document.getElementById('title').value = "";
+            document.getElementById('amount').value = "";
+            loadData();
+        }
+    };
+
+    loadData();
+</script>
+</body>
+</html>

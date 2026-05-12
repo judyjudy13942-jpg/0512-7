@@ -4,70 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>💕 小精靈 & 西瓜 記帳本 💕</title>
-    
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
     <style>
-        body { font-family: sans-serif; background: #ffe3ef; padding: 20px; color: #6d2942; text-align: center; }
+        body { font-family: sans-serif; background: #ffe3ef; padding: 15px; color: #6d2942; }
         .container { max-width: 450px; margin: auto; }
-        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #f3a9c6; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; cursor: pointer; }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        h2, h3 { margin: 0 0 15px 0; color: #df4d8f; }
+        label { display: block; text-align: left; margin-top: 10px; font-size: 14px; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 1px solid #f3a9c6; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 15px; }
         button:disabled { background: #ccc; }
-        .record-item { background: #fff2f8; border-radius: 15px; padding: 15px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; text-align: left; }
+        
+        /* 統計看板樣式 */
+        #stats-board { background: #fff2f8; border: 2px dashed #ff97be; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
+        
+        /* 紀錄清單樣式 */
+        .record-item { background: #fff2f8; border-radius: 15px; padding: 15px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; text-align: left; border-left: 6px solid #ff97be; }
         .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; color: white; font-weight: bold; margin-right: 4px; }
         .tag-elf { background: #ff6fa9; }
         .tag-water { background: #4da6ff; }
+        .tag-need { background: #ff97be; }
+        .tag-want { background: #ffcb97; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <h2>💕 新增支出 💕</h2>
+        <h2>💕 小精靈 & 西瓜 記帳本 💕</h2>
+        <label>誰付錢</label>
         <select id="payer"><option value="小精靈">小精靈</option><option value="西瓜">西瓜</option></select>
-        <input id="title" placeholder="項目">
-        <input id="amount" type="number" placeholder="金額">
+
+        <input id="title" placeholder="項目名稱">
+        <input id="amount" type="number" inputmode="decimal" placeholder="金額">
+
+        <label>分類</label>
         <select id="category">
             <option value="餐飲">🍔 餐飲</option>
             <option value="交通">🚗 交通</option>
             <option value="購物">🛍️ 購物</option>
-            <option value="住宿">🏠 住宿</option>
-            <option value="狗勾">🐶 狗勾</option>
-            <option value="醫療">🏥 醫療</option> 
-            <option value="儲值">💰 儲值</option> 
+            <option value="醫療">🏥 醫療</option>
+            <option value="儲值">💰 儲值</option>
             <option value="罰款">🚔 罰款</option>
+            <option value="狗勾">🐶 狗勾</option>
             <option value="其他">✨ 其他</option>
         </select>
+
+        <label>類型</label>
         <select id="need_type">
             <option value="必要花費">⚠️ 必要花費</option>
             <option value="想要花費">🎁 想要花費</option>
         </select>
+
         <button id="addBtn">確認新增</button>
     </div>
+
+    <div id="stats-board">正在計算統計數據...</div>
+
     <div class="card">
-        <div id="stats-board" style="margin-bottom: 15px;"></div>
         <h3>📊 支出紀錄</h3>
         <div id="list">正在同步資料...</div>
     </div>
 </div>
 
 <script>
-    // --- 配置資訊 ---
-    const SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
-    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
+    const CONFIG = {
+        URL: "https://dfflacypaegfmgstwzeb.supabase.co",
+        KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ"
+    };
     
-    let client = null;
+    let dbClient = null;
 
-    // --- 安全初始化連線 ---
+    // 初始化連線
     function getClient() {
-        if (client) return client; // 如果已經連好了就直接用
-        
-        // 檢查全域變數是否存在 (避免 TypeError)
+        if (dbClient) return dbClient;
         if (window.supabase && window.supabase.createClient) {
-            client = window.supabase.createClient(SB_URL, SB_KEY);
-            return client;
-            showStatistics();
+            dbClient = window.supabase.createClient(CONFIG.URL, CONFIG.KEY);
+            return dbClient;
         }
         return null;
     }
@@ -139,56 +152,19 @@
             console.error(e);
         }
     }
-    
-    async function loadData() {
-        const listDiv = document.getElementById('list');
-        const supabase = getClient();
 
-        if (!supabase) {
-            console.log("等待 SDK 載入...");
-            setTimeout(loadData, 300); // 0.3秒後重試
-            return;
-        }
-
-        try {
-            const { data, error } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
-            if (error) throw error;
-            
-            if (!data || data.length === 0) {
-                listDiv.innerHTML = "目前沒資料。";
-                return;
-            }
-
-            listDiv.innerHTML = data.map(item => `
-                <div class="record-item">
-                    <div>
-                        <span class="tag ${item.payer === '小精靈' ? 'tag-elf' : 'tag-water'}">${item.payer}</span>
-                        <b>${item.title}</b><br>
-                        <small style="color:#999">${item.category} | ${item.need_type}</small>
-                    </div>
-                    <div style="font-weight:bold; color:#cb457e;">$${item.amount}</div>
-                </div>
-            `).join('');
-        } catch (e) {
-            listDiv.innerHTML = "讀取失敗: " + e.message;
-        }
-    }
-
+    // 新增按鈕
     document.getElementById('addBtn').onclick = async () => {
-        const supabase = getClient();
-        if (!supabase) return alert("系統連線中，請稍候");
-
+        const client = getClient();
         const t = document.getElementById('title').value;
         const a = document.getElementById('amount').value;
-        if (!t || !a) return alert("請填寫內容");
-        // 關鍵：在這裡呼叫，讓畫面上的數字立刻變動！
-        refreshApp();
+        if (!t || !a || !client) return alert("請填寫完整或稍後再試！");
 
         const btn = document.getElementById('addBtn');
         btn.disabled = true;
         btn.innerText = "儲存中...";
 
-        const { error } = await supabase.from('expenses').insert([{
+        const { error } = await client.from('expenses').insert([{
             title: t,
             amount: Number(a),
             payer: document.getElementById('payer').value,
@@ -200,14 +176,13 @@
         else {
             document.getElementById('title').value = "";
             document.getElementById('amount').value = "";
-            loadData();
+            refreshApp();
         }
         btn.disabled = false;
         btn.innerText = "確認新增";
     };
 
-    // 啟動
-    window.onload = loadData;
+    window.onload = refreshApp;
 </script>
 </body>
 </html>

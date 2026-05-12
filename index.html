@@ -71,19 +71,30 @@
     const myAppClient = window.myApp.createClient(CONFIG_URL, CONFIG_KEY);
 
     async function refreshRecords() {
+    async function refreshRecords() {
+    const listDiv = document.getElementById('list');
+    try {
         const { data, error } = await myAppClient.from('expenses').select('*').order('created_at', { ascending: false });
-        const listDiv = document.getElementById('list');
         
         if (error) {
-            listDiv.innerText = "讀取失敗: " + error.message;
+            // 如果連線失敗，這裡會顯示原因，例如：Network Error 或 JWT expired
+            listDiv.innerHTML = `<b style="color:red">連線失敗：${error.message}</b>`;
             return;
         }
 
         if (!data || data.length === 0) {
-            listDiv.innerHTML = "目前沒有任何紀錄。";
+            listDiv.innerHTML = "目前沒有紀錄。";
             return;
         }
 
+        // ...原本渲染紀錄的代碼...
+        listDiv.innerHTML = data.map(item => `<div>${item.title}: $${item.amount}</div>`).join('');
+
+    } catch (err) {
+        // 如果連程式碼都跑不動，會跳這個
+        listDiv.innerHTML = `<b style="color:red">執行錯誤：${err.message}</b>`;
+    }
+}
         listDiv.innerHTML = data.map(item => {
             const typeClass = item.need_type === '必要花費' ? 'tag-need' : 'tag-want';
             const payerClass = item.payer === '小精靈' ? 'tag-elf' : 'tag-watermelon';

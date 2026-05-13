@@ -104,28 +104,84 @@
     }
 
     async function refresh() {
-        const db = getDb(); if (!db) return;
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const db = getDb(); 
+    if (!db) return;
 
-        const { data, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
-        if (error) return;
-        localData = data || [];
+    // 1. 強制重新取得當前月份的第一天
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        let stats = { "小精靈": 0, "西瓜": 0, "total": 0, "elf_r": 0, "water_r": 0, "elfList": [], "waterList": [] };
+    // 2. 從資料庫抓取最新資料
+    const { data, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
+    if (error) { console.error("抓取失敗:", error); return; }
+    localData = data || [];
 
-        localData.forEach(i => {
-            const amt = Number(i.amount), payer = i.payer.trim(), date = new Date(i.created_at);
-            if (date >= startOfMonth) {
-                if (stats[payer] !== undefined) stats[payer] += amt;
-                stats.total += amt;
+    // 3. 初始化統計變數 (確保名稱與 UI 一致)
+    let stats = { 
+        "小精靈": 0, 
+        "西瓜": 0, 
+        "total": 0, 
+        "elf_r": 0,     // 小精靈待請款
+        "water_r": 0,   // 西瓜待請款
+        "elfList": [], 
+        "waterList": [] 
+    };
+
+    localData.forEach(i => {
+        const amt = Number(i.amount);
+        const payer = i.payer.trim(); // 去掉可能的空格
+        const recordDate = new Date(i.created_at);
+
+        // --- A. 實質支出統計 (根據目前這筆紀錄「是誰付的」來加總) ---
+        if (recordDate >= startOfMonth) {
+            if (payer === "小精靈") {
+                stats["小精靈"] += amt;
+            } else if (payer === "西瓜") {
+                stats["西瓜"] += amt;
             }
-            if (i.is_reimburse && !i.is_settled) {
-                if (payer === "小精靈") { stats.elf_r += amt; stats.elfList.push(i); }
-                else { stats.water_r += amt; stats.waterList.push(i); }
-            }
-        });
+            stats.total += amt;
+        }
 
+        // --- B. 待請款統計 (只看還沒結清的) ---
+        if (i.is_reimburse && !i.is_settled) {
+            if (payer === "小精靈") { 
+                stats.elf_r += amt; 
+                stats.elfList.push(i); 
+            } else if (payer === "西瓜") { 
+                stats.water_r += amt; 
+                stats.waterList.push(i); 
+            }
+        }
+    });
+
+    // 4. 更新看板 UI
+    const listToText = (list) => list.length ? list.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無細項';
+    document.getElementById('stats-board').innerHTML = `
+        <h4 style="margin:0; color:#df4d8f;">📅 本月實質總支出</h4>
+        <div class="total-amount">$${Math.round(stats.total)}</div>
+        <div style="display:flex; justify-content: space-around; font-size:12px; color:#888; margin-bottom:10px;">
+            <span>🧚 個人: $${Math.round(stats["小精靈"])}</span>
+            <span>🍉 個人: $${Math.round(stats["西瓜"])}</span>
+        </div>
+        <div class="reimburse-box">
+            <div style="display:flex; justify-content: space-around; text-align:left;">
+                <div style="width:45%">
+                    <b style="color:#6c5ce7; font-size:11px;">🧚 小精靈待請款</b><br>
+                    <span style="font-size:18px; font-weight:bold;">$${Math.round(stats.elf_r)}</span>
+                    <div class="reimburse-detail">${listToText(stats.elfList)}</div>
+                </div>
+                <div style="width:1px; background:#e0c3fc;"></div>
+                <div style="width:45%">
+                    <b style="color:#6c5ce7; font-size:11px;">🍉 西瓜待請款</b><br>
+                    <span style="font-size:18px; font-weight:bold;">$${Math.round(stats.water_r)}</span>
+                    <div class="reimburse-detail">${listToText(stats.waterList)}</div>
+                </div>
+            </div>
+            <button class="settle-btn" onclick="settleAll()">💰 結清並身分反轉</button>
+        </div>
+    `;
+    renderList();
+}
         const listToText = (list) => list.length ? list.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無細項';
         document.getElementById('stats-board').innerHTML = `
             <h4 style="margin:0; color:#df4d8f;">📅 本月實質總支出</h4>

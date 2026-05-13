@@ -12,7 +12,6 @@
         h2, h3 { margin: 0 0 15px 0; color: #df4d8f; font-size: 20px; }
         label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
         
-        /* 修正日期欄位突出問題 */
         input, select { 
             width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 1px solid #f3a9c6; 
             box-sizing: border-box; font-size: 16px; outline: none; display: block;
@@ -36,7 +35,7 @@
 <body>
 
 <div class="container">
-    <div class="card" id="stats-board"><p>📊 數據連線中...</p></div>
+    <div class="card" id="stats-board"><p>📊 數據加載中...</p></div>
 
     <div class="card">
         <h2>💕 新增紀錄</h2>
@@ -44,10 +43,17 @@
         <input id="custom-date" type="date">
         <label>誰付錢</label>
         <select id="payer"><option value="小精靈">小精靈</option><option value="西瓜">西瓜</option></select>
-        <label>項目名稱</label>
-        <input id="title" type="text" placeholder="花了什麼？">
+        <label>項目名稱 (選填)</label>
+        <input id="title" type="text" placeholder="沒填預設為：未命名項目">
         <label>金額</label>
-        <input id="amount" type="number" step="any" placeholder="0">
+        <input id="amount" type="number" step="any" placeholder="請輸入金額">
+        
+        <label>消費屬性</label>
+        <select id="need_type">
+            <option value="需要">✅ 需要 (必要花費)</option>
+            <option value="想要">🎁 想要 (額外開銷)</option>
+        </select>
+
         <label>分類</label>
         <select id="category">
             <option value="餐飲">🍔 餐飲</option>
@@ -63,6 +69,7 @@
             <option value="爸爸贊助">🎁 爸爸贊助</option>
             <option value="其他">✨ 其他</option>
         </select>
+        
         <label class="checkbox-container">
             <input type="checkbox" id="is_reimburse">
             <span style="font-size:14px; font-weight:bold; color:#df4d8f;">🙋 這是「待請款」</span>
@@ -100,8 +107,7 @@
     function getDb() { if (!client && window.supabase) client = window.supabase.createClient(SB_URL, SB_KEY); return client; }
 
     function setDefaultDate() {
-        const now = new Date();
-        document.getElementById('custom-date').value = now.toISOString().split('T')[0];
+        document.getElementById('custom-date').value = new Date().toISOString().split('T')[0];
     }
 
     async function refresh() {
@@ -113,7 +119,6 @@
         if (error) return;
         localData = data || [];
 
-        // 初始化統計：確保 key 與 payer 字串完全一致
         let stats = { "小精靈": 0, "西瓜": 0, "total": 0, "elf_r": 0, "water_r": 0, "elfList": [], "waterList": [] };
 
         localData.forEach(i => {
@@ -121,14 +126,12 @@
             const payer = i.payer.trim();
             const date = new Date(i.created_at);
 
-            // 1. 實質支出統計（只要是本月且成功扣款，不論是否結清，都算在當前 payer 頭上）
             if (date >= startOfMonth) {
                 if (payer === "小精靈") stats["小精靈"] += amt;
                 else if (payer === "西瓜") stats["西瓜"] += amt;
                 stats.total += amt;
             }
 
-            // 2. 待請款統計（顯示在結清箱子裡）
             if (i.is_reimburse && !i.is_settled) {
                 if (payer === "小精靈") { stats.elf_r += amt; stats.elfList.push(i); }
                 else if (payer === "西瓜") { stats.water_r += amt; stats.waterList.push(i); }
@@ -161,9 +164,13 @@
         const filtered = localData.filter(i => (filter === "全部" || (filter === "待請款" && i.is_reimburse) || i.category === filter));
         listDiv.innerHTML = filtered.map(i => `
             <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">
-                <div><span class="tag" style="background:${i.payer === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
-                ${i.is_reimburse ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
-                <b>${i.title}</b><small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small></div>
+                <div>
+                    <span class="tag" style="background:${i.payer === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
+                    <span class="tag" style="background:#888; font-size:9px;">${i.need_type || '需要'}</span>
+                    ${i.is_reimburse ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
+                    <b>${i.title}</b>
+                    <small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small>
+                </div>
                 <div class="amount-text">$${i.amount}</div>
             </div>`).join('');
     }
@@ -186,47 +193,43 @@
     }
 
     document.getElementById('addBtn').onclick = async () => {
-    const db = getDb();
-    const t = document.getElementById('title').value;
-    const a = document.getElementById('amount').value;
-    const d = document.getElementById('custom-date').value;
-    const c = document.getElementById('category').value;
-    const p = document.getElementById('payer').value;
-    const r = document.getElementById('is_reimburse').checked;
-    
-    // 這裡補上你之前提到過的 need_type 欄位
-    // 如果 HTML 裡沒有這個 ID，我就預設給它「必要花費」
-    const ntEl = document.getElementById('need_type');
-    const nt = ntEl ? ntEl.value : "必要花費";
+        const db = getDb();
+        let t = document.getElementById('title').value;
+        const a = document.getElementById('amount').value;
+        const d = document.getElementById('custom-date').value;
+        const c = document.getElementById('category').value;
+        const p = document.getElementById('payer').value;
+        const nt = document.getElementById('need_type').value;
+        const r = document.getElementById('is_reimburse').checked;
 
-    if (!t || !a) return alert("項目跟金額都要填喔！");
-    if (c === "罰款") alert("👊 揍你喔！小心一點！");
+        // 項目改為選填：若為空字串，給予預設值
+        if (!t.trim()) t = "未命名項目";
+        
+        if (!a) return alert("金額還是要填喔！");
+        if (c === "罰款") alert("👊 揍你喔！小心一點！");
 
-    let dateObj = d ? new Date(d + 'T' + new Date().toLocaleTimeString('it-IT')) : new Date();
+        let dateObj = d ? new Date(d + 'T' + new Date().toLocaleTimeString('it-IT')) : new Date();
 
-    // 這裡補齊所有可能的欄位名稱
-    const { error } = await db.from('expenses').insert([{
-        title: t, 
-        amount: Number(a),
-        payer: p,
-        category: c,
-        is_reimburse: r,
-        is_settled: false,
-        need_type: nt, // 補上這個欄位解決 23502 錯誤
-        created_at: dateObj.toISOString()
-    }]);
+        const { error } = await db.from('expenses').insert([{
+            title: t, 
+            amount: Number(a),
+            payer: p,
+            category: c,
+            need_type: nt,
+            is_reimburse: r,
+            is_settled: false,
+            created_at: dateObj.toISOString()
+        }]);
 
-    if (error) {
-        alert("依然失敗！代碼：" + error.code + "\n訊息：" + error.message);
-        console.error(error);
-    } else {
-        // 清空輸入
-        document.getElementById('title').value = "";
-        document.getElementById('amount').value = "";
-        document.getElementById('is_reimburse').checked = false;
-        refresh();
-    }
-};
+        if (error) {
+            alert("新增失敗！錯誤代碼：" + error.code + "\n訊息：" + error.message);
+        } else {
+            document.getElementById('title').value = "";
+            document.getElementById('amount').value = "";
+            document.getElementById('is_reimburse').checked = false;
+            refresh();
+        }
+    };
 
     window.onload = () => { setDefaultDate(); refresh(); };
 </script>

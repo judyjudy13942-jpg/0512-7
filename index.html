@@ -193,13 +193,18 @@
     const c = document.getElementById('category').value;
     const p = document.getElementById('payer').value;
     const r = document.getElementById('is_reimburse').checked;
+    
+    // 這裡補上你之前提到過的 need_type 欄位
+    // 如果 HTML 裡沒有這個 ID，我就預設給它「必要花費」
+    const ntEl = document.getElementById('need_type');
+    const nt = ntEl ? ntEl.value : "必要花費";
 
     if (!t || !a) return alert("項目跟金額都要填喔！");
     if (c === "罰款") alert("👊 揍你喔！小心一點！");
 
     let dateObj = d ? new Date(d + 'T' + new Date().toLocaleTimeString('it-IT')) : new Date();
 
-    // 🔴 這裡我加了錯誤診斷
+    // 這裡補齊所有可能的欄位名稱
     const { error } = await db.from('expenses').insert([{
         title: t, 
         amount: Number(a),
@@ -207,14 +212,15 @@
         category: c,
         is_reimburse: r,
         is_settled: false,
+        need_type: nt, // 補上這個欄位解決 23502 錯誤
         created_at: dateObj.toISOString()
     }]);
 
     if (error) {
-        // 📢 這會告訴我們具體是什麼錯誤（例如：Could not find column "category"）
-        alert("新增失敗！錯誤訊息：" + error.message + "\n錯誤代碼：" + error.code);
+        alert("依然失敗！代碼：" + error.code + "\n訊息：" + error.message);
         console.error(error);
     } else {
+        // 清空輸入
         document.getElementById('title').value = "";
         document.getElementById('amount').value = "";
         document.getElementById('is_reimburse').checked = false;

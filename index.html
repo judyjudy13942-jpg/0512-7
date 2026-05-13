@@ -10,31 +10,57 @@
         .container { max-width: 450px; margin: auto; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; }
         h2, h3 { margin: 0 0 15px 0; color: #df4d8f; font-size: 20px; }
-        label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
         
+        /* 表單元素基礎設定 */
+        label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
         input, select { 
             width: 100%; height: 45px; padding: 0 12px; margin-top: 5px; border-radius: 12px; border: 1px solid #f3a9c6; 
-            box-sizing: border-box; font-size: 16px; outline: none; display: block; background-color: white;
-            appearance: none; -webkit-appearance: none;
+            box-sizing: border-box; font-size: 16px; outline: none; background-color: white;
+            display: flex; align-items: center;
+        }
+
+        /* 修正日期欄位偏上問題 */
+        input[type="date"] {
+            -webkit-appearance: none;
+            display: block;
+            line-height: 1.2;
+            padding-top: 10px; /* 針對 iOS 垂直居中微調 */
+        }
+
+        /* 修正 Checkbox 透明看不見勾勾的問題 */
+        .checkbox-container { 
+            display: flex; align-items: center; background: #fff2f8; padding: 12px; 
+            border-radius: 12px; margin-top: 15px; cursor: pointer; border: 1px solid #f3a9c6; 
+        }
+        .checkbox-container input[type="checkbox"] {
+            appearance: auto !important; /* 強制顯示系統原生勾選框 */
+            -webkit-appearance: checkbox !important;
+            width: 22px !important;
+            height: 22px !important;
+            margin: 0 10px 0 0 !important;
+            accent-color: #ff6fa9; /* 勾選後的顏色 */
+            flex-shrink: 0;
         }
 
         button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; }
         #stats-board { background: #fff; border: 2px dashed #ff97be; border-radius: 20px; padding: 15px; min-height: 100px; }
         .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; margin: 5px 0; }
-        .reimburse-box { background: #fdf2ff; border-radius: 12px; padding: 12px; margin-top: 15px; border: 1px solid #e0c3fc; }
-        .reimburse-detail { text-align: left; font-size: 11px; color: #6c5ce7; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.5; }
+        
+        /* 歷史紀錄列表與標籤 */
         .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; text-align: left; }
         .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 4px; color: white; font-weight: bold; }
         .tag-settled { background: #b2bec3; }
         .tag-reimburse { background: #6c5ce7; }
         .amount-text { font-size: 18px; font-weight: bold; color: #cb457e; }
+
+        /* 結清區塊 */
+        .reimburse-box { background: #fdf2ff; border-radius: 12px; padding: 12px; margin-top: 15px; border: 1px solid #e0c3fc; }
+        .reimburse-detail { text-align: left; font-size: 11px; color: #6c5ce7; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.5; }
         .settle-btn { background: #6c5ce7; font-size: 14px; padding: 10px; margin-top: 10px; width: 100%; border-radius: 10px; color: white; border: none; cursor: pointer; }
-        .checkbox-container { display: flex; align-items: center; background: #fff2f8; padding: 12px; border-radius: 12px; margin-top: 15px; cursor: pointer; border: 1px solid #f3a9c6; width: 100%; box-sizing: border-box; }
-        .checkbox-container input { width: 20px !important; height: 20px !important; margin: 0 10px 0 0 !important; cursor: pointer; flex-shrink: 0; }
-        
-        /* 歷史紀錄篩選列並排 */
+
+        /* 篩選欄位並排 */
         .filter-row { display: flex; gap: 8px; margin-bottom: 10px; }
-        #filter-payer, #filter-category { margin-top: 0 !important; flex: 1; }
+        .filter-row select { margin-top: 0; flex: 1; height: 40px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -44,19 +70,19 @@
 
     <div class="card">
         <h2>💕 新增紀錄</h2>
-        <label>日期</label>
+        <label>補記日期</label>
         <input id="custom-date" type="date">
         <label>誰付錢</label>
         <select id="payer"><option value="小精靈">小精靈</option><option value="西瓜">西瓜</option></select>
         <label>項目名稱</label>
-        <input id="title" type="text" placeholder="沒填預設為：未命名項目">
+        <input id="title" type="text" placeholder="預設：未命名項目">
         <label>金額</label>
         <input id="amount" type="number" inputmode="decimal" placeholder="請輸入金額">
         
         <label>消費屬性</label>
         <select id="need_type">
-            <option value="需要">✅ 需要 (必要花費)</option>
-            <option value="想要">🎁 想要 (額外開銷)</option>
+            <option value="需要">✅ 需要</option>
+            <option value="想要">🎁 想要</option>
         </select>
 
         <label>分類</label>
@@ -76,26 +102,8 @@
         </select>
         
         <label class="checkbox-container">
-            /* 移除原本的樣式干擾，重新定義一個漂亮的勾選框 */
-.checkbox-container input[type="checkbox"] {
-    appearance: auto !important; /* 回復原生勾選顯示，確保手機一定看得到勾勾 */
-    -webkit-appearance: checkbox !important;
-    width: 22px !important;
-    height: 22px !important;
-    margin: 0 12px 0 0 !important;
-    cursor: pointer;
-    flex-shrink: 0;
-    accent-color: #ff6fa9; /* 設定勾選後的顏色為粉紅色 */
-}
-
-/* 確保日期欄位文字垂直居中 */
-input[type="date"] {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: normal;
-    padding-top: 2px; /* 微調讓文字置中 */
-}
+            <input type="checkbox" id="is_reimburse">
+            <span style="font-size:15px; font-weight:bold; color:#df4d8f;">🙋 這是「待請款」</span>
         </label>
         <button id="addBtn">確認新增紀錄</button>
     </div>
@@ -142,25 +150,29 @@ input[type="date"] {
         const listDiv = document.getElementById('record-list');
 
         const filtered = localData.filter(i => {
-            const pMatch = (filterPayer === "全部" || i.payer.trim() === filterPayer);
+            const pMatch = (filterPayer === "全部" || String(i.payer).trim() === filterPayer);
+            const isReimburse = (i.is_reimburse == true || i.is_reimburse == "true");
             let cMatch = false;
             if (filterCat === "全部") cMatch = true;
-            else if (filterCat === "待請款") cMatch = (i.is_reimburse === true || i.is_reimburse === "true");
+            else if (filterCat === "待請款") cMatch = isReimburse;
             else cMatch = (i.category === filterCat);
             return pMatch && cMatch;
         });
 
-        listDiv.innerHTML = filtered.map(i => `
+        listDiv.innerHTML = filtered.map(i => {
+            const isReimburse = (i.is_reimburse == true || i.is_reimburse == "true");
+            return `
             <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">
                 <div>
-                    <span class="tag" style="background:${i.payer.trim() === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
+                    <span class="tag" style="background:${i.payer.trim()==='小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
                     <span class="tag" style="background:#888; font-size:9px;">${i.need_type || '需要'}</span>
-                    ${(i.is_reimburse === true || i.is_reimburse === "true") ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
+                    ${isReimburse ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
                     <b>${i.title || '未命名'}</b>
                     <small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small>
                 </div>
                 <div class="amount-text">$${i.amount}</div>
-            </div>`).join('');
+            </div>`;
+        }).join('');
     }
 
     async function refresh() {
@@ -181,7 +193,7 @@ input[type="date"] {
                 else if (payer === "西瓜") stats["西瓜"] += amt;
                 stats.total += amt;
             }
-            if ((i.is_reimburse === true || i.is_reimburse === "true") && !i.is_settled) {
+            if ((i.is_reimburse == true || i.is_reimburse == "true") && !i.is_settled) {
                 if (payer === "小精靈") { stats.elf_r += amt; stats.elfList.push(i); }
                 else if (payer === "西瓜") { stats.water_r += amt; stats.waterList.push(i); }
             }
@@ -225,7 +237,7 @@ input[type="date"] {
         
         document.getElementById('addBtn').onclick = async () => {
             const db = getDb();
-            let t = document.getElementById('title').value || "未命名項目";
+            const t = document.getElementById('title').value || "未命名項目";
             const a = document.getElementById('amount').value;
             const d = document.getElementById('custom-date').value;
             const c = document.getElementById('category').value;

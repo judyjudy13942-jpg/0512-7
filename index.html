@@ -143,32 +143,44 @@
     const db = getDb();
     if (!db) { setTimeout(refresh, 500); return; }
 
+    // 1. 設定本月的第一天 (例如 2026-05-01)
     const now = new Date();
-    const startThis = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // 每次 refresh 都重新抓最新資料
+    // 2. 從資料庫抓取最新資料
     const { data: allRecords, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
     if (error) return;
     localData = allRecords || [];
 
-    // 初始化：確保名字與資料庫一致
-    let stats = { "小精靈": 0, "西瓜": 0, "total": 0, "小精靈待請款額": 0, "西瓜待請款額": 0, "elfList": [], "waterList": [] };
+    // 3. 初始化統計變數
+    let stats = { 
+        "小精靈": 0, 
+        "西瓜": 0, 
+        "total": 0, 
+        "小精靈待請款額": 0, 
+        "西瓜待請款額": 0, 
+        "elfList": [], 
+        "waterList": [] 
+    };
 
+    // 4. 開始掃描每一筆紀錄
     localData.forEach(i => {
         const amt = Number(i.amount);
-        const payer = i.payer.trim(); // 確保移除前後空格
-        const isThisMonth = new Date(i.created_at) >= new Date(startThis);
+        const payer = i.payer ? i.payer.trim() : "";
+        const recordDate = new Date(i.created_at);
 
-        // --- 核心個人統計邏輯 ---
+        // --- 核心改動：檢查是否為本月紀錄 ---
+        const isThisMonth = recordDate >= startThisMonth;
+
         if (isThisMonth) {
-            // 這裡會依照「目前」資料庫紀錄的 payer 是誰，就加在誰頭上
+            // 只要是本月的帳，就看「現在」誰是付款人，就加在誰身上
             if (stats[payer] !== undefined) {
                 stats[payer] += amt;
             }
             stats.total += amt;
         }
 
-        // --- 待請款細項邏輯 (只抓未結清的項目) ---
+        // --- 待請款明細 (只抓還沒結清的) ---
         if (i.is_reimburse && !i.is_settled) {
             if (payer === "小精靈") {
                 stats["小精靈待請款額"] += amt;
@@ -180,9 +192,40 @@
         }
     });
 
-    // 渲染看板 (保留之前的 UI)
-    renderStatsBoard(stats); 
-    renderList();
+    // 5. 將計算好的結果畫到網頁看板上
+    updateBoardUI(stats); 
+    renderList(); // 更新下方的歷史清單
+}
+
+// 為了讓代碼乾淨，我把 UI 渲染抽出來
+function updateBoardUI(stats) {
+    const listToText = (list) => list.length ? list.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無細項';
+
+    document.getElementById('stats-board').innerHTML = `
+        <h4 style="margin:0; color:#df4d8f;">📅 本月實質總支出</h4>
+        <div class="total-amount">$${Math.round(stats.total)}</div>
+        <div style="display:flex; justify-content: space-around; font-size:12px; color:#888; margin-bottom:10px;">
+            <span>🧚 個人: $${Math.round(stats["小精靈"])}</span>
+            <span>🍉 個人: $${Math.round(stats["西瓜"])}</span>
+        </div>
+        
+        <div class="reimburse-box">
+            <div style="display:flex; justify-content: space-around; text-align:left;">
+                <div style="width:45%">
+                    <b style="color:#6c5ce7; font-size:11px;">🧚 小精靈待請款</b><br>
+                    <span style="font-size:18px; font-weight:bold;">$${stats["小精靈待請款額"]}</span>
+                    <div class="reimburse-detail">${listToText(stats.elfList)}</div>
+                </div>
+                <div style="width:1px; background:#e0c3fc;"></div>
+                <div style="width:45%">
+                    <b style="color:#6c5ce7; font-size:11px;">🍉 西瓜待請款</b><br>
+                    <span style="font-size:18px; font-weight:bold;">$${stats["西瓜待請款額"]}</span>
+                    <div class="reimburse-detail">${listToText(stats.waterList)}</div>
+                </div>
+            </div>
+            <button class="settle-btn" onclick="settleAll()">💰 結清並身分反轉</button>
+        </div>
+    `;
 }
 
         const listToText = (list) => list.length ? list.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無細項';

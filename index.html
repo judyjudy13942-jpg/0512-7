@@ -189,3 +189,18 @@
             category: c,
             need_type: document.getElementById('need_type').value,
             is_reimburse: document.getElementById('is_reimburse').checked,
+            is_settled: false,
+            created_at: finalDate.toISOString()
+        }]);
+
+        document.getElementById('title').value = "";
+        document.getElementById('amount').value = "";
+        document.getElementById('is_reimburse').checked = false;
+        setDefaultDate();
+        refresh();
+    };
+
+    window.onload = () => { setDefaultDate(); refresh(); };
+</script>
+</body>
+</html>

@@ -227,20 +227,37 @@
     }
 
     async function settleAll() {
-        if (!confirm("結清後，待請款項目將會『身分反轉』並自動加上備註，確定嗎？")) return;
-        const db = getDb();
-        const { data: targets } = await db.from('expenses').select('*').eq('is_reimburse', true).eq('is_settled', false);
-        if (!targets || targets.length === 0) return alert("目前沒有待請款項。");
+    if (!confirm("結清後，待請款項目將會『身分反轉』，金額將計入對方支出。確定嗎？")) return;
+    const db = getDb();
+    
+    // 1. 找出所有待請款且尚未結清的項目
+    const { data: targets, error: fetchError } = await db.from('expenses')
+        .select('*')
+        .eq('is_reimburse', true)
+        .eq('is_settled', false);
+    
+    if (fetchError) return alert("抓取資料失敗：" + fetchError.message);
+    if (!targets || targets.length === 0) return alert("目前沒有待請款項。");
 
-        for (const item of targets) {
-            const originalPayer = item.payer.trim();
-            const newPayer = (originalPayer === "小精靈") ? "西瓜" : "小精靈";
-            const newTitle = `(${originalPayer}代付) ${item.title}`;
-            await db.from('expenses').update({ payer: newPayer, title: newTitle, is_settled: true }).eq('id', item.id);
-        }
-        alert("結清完成！");
-        refresh();
+    // 2. 逐筆進行身分反轉與備註更新
+    for (const item of targets) {
+        const originalPayer = item.payer.trim();
+        const newPayer = (originalPayer === "小精靈") ? "西瓜" : "小精靈";
+        const newTitle = `(${originalPayer}代付) ${item.title}`;
+
+        const { error: updateError } = await db.from('expenses').update({
+            payer: newPayer,   // 這裡變更了付款人，會直接影響看板統計
+            title: newTitle,
+            is_settled: true   // 標記為已結清
+        }).eq('id', item.id);
+        
+        if (updateError) console.error("更新失敗:", updateError);
     }
+
+    // 3. 強制重新抓取資料庫，確保看板更新
+    alert("✨ 結清完成！身分已移轉。");
+    await refresh(); 
+}
 
     document.getElementById('addBtn').onclick = async () => {
         const db = getDb();

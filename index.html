@@ -13,7 +13,7 @@
         label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
         input, select { 
             width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 1px solid #f3a9c6; 
-            box-sizing: border-box; font-size: 16px; outline: none; appearance: none; -webkit-appearance: none;
+            box-sizing: border-box; font-size: 16px; outline: none;
         }
         button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; }
         #stats-board { background: #fff; border: 2px dashed #ff97be; border-radius: 20px; padding: 15px; }
@@ -27,23 +27,23 @@
         .amount-text { font-size: 18px; font-weight: bold; color: #cb457e; }
         .settle-btn { background: #6c5ce7; font-size: 14px; padding: 10px; margin-top: 10px; width: 100%; border-radius: 10px; color: white; border: none; cursor: pointer; }
         .checkbox-container { display: flex; align-items: center; background: #fff2f8; padding: 10px; border-radius: 12px; margin-top: 15px; cursor: pointer; border: 1px solid #f3a9c6; }
-        .checkbox-container input { width: 20px; height: 20px; margin-right: 10px; margin-top: 0; }
+        .checkbox-container input { width: 20px; height: 20px; margin-right: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="card" id="stats-board"><p>📊 數據載入中...</p></div>
+    <div class="card" id="stats-board"><p>📊 正在努力連線中...</p></div>
 
     <div class="card">
         <h2>💕 新增紀錄</h2>
-        <label>補記日期 (不填即為今天)</label>
+        <label>補記日期</label>
         <input id="custom-date" type="date">
         <label>誰付錢</label>
         <select id="payer"><option value="小精靈">小精靈</option><option value="西瓜">西瓜</option></select>
         <label>項目名稱</label>
-        <input id="title" type="text" placeholder="去哪兒花了錢？">
-        <label>金額 (贊助/退款請打負數)</label>
+        <input id="title" type="text" placeholder="買了什麼？">
+        <label>金額</label>
         <input id="amount" type="number" step="any" placeholder="0">
         <label>分類</label>
         <select id="category">
@@ -64,16 +64,14 @@
             <input type="checkbox" id="is_reimburse">
             <span style="font-size:14px; font-weight:bold; color:#df4d8f;">🙋 這是「待請款」</span>
         </label>
-        <label>類型</label>
-        <select id="need_type"><option value="必要花費">⚠️ 必要花費</option><option value="想要花費">🎁 想要花費</option></select>
         <button id="addBtn">確認新增紀錄</button>
     </div>
 
     <div class="card">
         <h3>📜 歷史紀錄</h3>
-        <select id="filter-category" onchange="renderList()" style="margin-bottom:10px; width:100%;">
-            <option value="全部">📂 全部類別</option>
-            <option value="待請款">💸 待請款項</option>
+        <select id="filter-category" onchange="renderList()" style="margin-bottom:10px;">
+            <option value="全部">📂 全部</option>
+            <option value="待請款">💸 待請款</option>
             <option value="餐飲">🍔 餐飲</option>
             <option value="餐費預付">💰 餐費預付</option>
             <option value="住宿">🏨 住宿</option>
@@ -94,107 +92,72 @@
 <script>
     const SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
-    let client = null, localData = [];
+    
+    let client = null;
+    let localData = [];
 
-    function getDb() { if (!client && window.supabase) client = window.supabase.createClient(SB_URL, SB_KEY); return client; }
+    // 初始化 Supabase
+    function initDb() {
+        if (!client) {
+            try {
+                client = supabase.createClient(SB_URL, SB_KEY);
+            } catch (e) {
+                console.error("Supabase 初始化失敗", e);
+            }
+        }
+        return client;
+    }
 
     function setDefaultDate() {
-        const now = new Date();
-        document.getElementById('custom-date').value = now.toISOString().split('T')[0];
+        document.getElementById('custom-date').value = new Date().toISOString().split('T')[0];
     }
 
     async function refresh() {
-    const db = getDb(); 
-    if (!db) return;
+        const db = initDb();
+        if (!db) return;
 
-    // 1. 強制重新取得當前月份的第一天
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    // 2. 從資料庫抓取最新資料
-    const { data, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
-    if (error) { console.error("抓取失敗:", error); return; }
-    localData = data || [];
-
-    // 3. 初始化統計變數 (確保名稱與 UI 一致)
-    let stats = { 
-        "小精靈": 0, 
-        "西瓜": 0, 
-        "total": 0, 
-        "elf_r": 0,     // 小精靈待請款
-        "water_r": 0,   // 西瓜待請款
-        "elfList": [], 
-        "waterList": [] 
-    };
-
-    localData.forEach(i => {
-        const amt = Number(i.amount);
-        const payer = i.payer.trim(); // 去掉可能的空格
-        const recordDate = new Date(i.created_at);
-
-        // --- A. 實質支出統計 (根據目前這筆紀錄「是誰付的」來加總) ---
-        if (recordDate >= startOfMonth) {
-            if (payer === "小精靈") {
-                stats["小精靈"] += amt;
-            } else if (payer === "西瓜") {
-                stats["西瓜"] += amt;
-            }
-            stats.total += amt;
+        const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        
+        // 抓取資料
+        const { data, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
+        if (error) {
+            console.error("抓取紀錄失敗:", error);
+            document.getElementById('stats-board').innerHTML = "❌ 連線失敗，請檢查網路。";
+            return;
         }
+        
+        localData = data || [];
+        console.log("資料更新成功", localData);
 
-        // --- B. 待請款統計 (只看還沒結清的) ---
-        if (i.is_reimburse && !i.is_settled) {
-            if (payer === "小精靈") { 
-                stats.elf_r += amt; 
-                stats.elfList.push(i); 
-            } else if (payer === "西瓜") { 
-                stats.water_r += amt; 
-                stats.waterList.push(i); 
+        let stats = { "小精靈": 0, "西瓜": 0, "total": 0, "elf_r": 0, "water_r": 0, "elfList": [], "waterList": [] };
+
+        localData.forEach(i => {
+            const amt = Number(i.amount), payer = i.payer.trim(), date = new Date(i.created_at);
+            // 本月加總
+            if (date >= startOfMonth) {
+                if (stats[payer] !== undefined) stats[payer] += amt;
+                stats.total += amt;
             }
-        }
-    });
+            // 待請款 (身分反轉後會自動正確分配)
+            if (i.is_reimburse && !i.is_settled) {
+                if (payer === "小精靈") { stats.elf_r += amt; stats.elfList.push(i); }
+                else { stats.water_r += amt; stats.waterList.push(i); }
+            }
+        });
 
-    // 4. 更新看板 UI
-    const listToText = (list) => list.length ? list.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無細項';
-    document.getElementById('stats-board').innerHTML = `
-        <h4 style="margin:0; color:#df4d8f;">📅 本月實質總支出</h4>
-        <div class="total-amount">$${Math.round(stats.total)}</div>
-        <div style="display:flex; justify-content: space-around; font-size:12px; color:#888; margin-bottom:10px;">
-            <span>🧚 個人: $${Math.round(stats["小精靈"])}</span>
-            <span>🍉 個人: $${Math.round(stats["西瓜"])}</span>
-        </div>
-        <div class="reimburse-box">
-            <div style="display:flex; justify-content: space-around; text-align:left;">
-                <div style="width:45%">
-                    <b style="color:#6c5ce7; font-size:11px;">🧚 小精靈待請款</b><br>
-                    <span style="font-size:18px; font-weight:bold;">$${Math.round(stats.elf_r)}</span>
-                    <div class="reimburse-detail">${listToText(stats.elfList)}</div>
-                </div>
-                <div style="width:1px; background:#e0c3fc;"></div>
-                <div style="width:45%">
-                    <b style="color:#6c5ce7; font-size:11px;">🍉 西瓜待請款</b><br>
-                    <span style="font-size:18px; font-weight:bold;">$${Math.round(stats.water_r)}</span>
-                    <div class="reimburse-detail">${listToText(stats.waterList)}</div>
-                </div>
-            </div>
-            <button class="settle-btn" onclick="settleAll()">💰 結清並身分反轉</button>
-        </div>
-    `;
-    renderList();
-}
         const listToText = (list) => list.length ? list.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無細項';
         document.getElementById('stats-board').innerHTML = `
             <h4 style="margin:0; color:#df4d8f;">📅 本月實質總支出</h4>
             <div class="total-amount">$${Math.round(stats.total)}</div>
             <div style="display:flex; justify-content: space-around; font-size:12px; color:#888; margin-bottom:10px;">
-                <span>🧚 個人: $${Math.round(stats["小精靈"])}</span>
-                <span>🍉 個人: $${Math.round(stats["西瓜"])}</span>
+                <span>🧚 小精靈: $${Math.round(stats["小精靈"])}</span>
+                <span>🍉 西瓜: $${Math.round(stats["西瓜"])}</span>
             </div>
             <div class="reimburse-box">
                 <div style="display:flex; justify-content: space-around; text-align:left;">
-                    <div style="width:45%"><b style="color:#6c5ce7; font-size:11px;">🧚 小精靈待請款</b><br><span style="font-size:18px; font-weight:bold;">$${Math.round(stats.elf_r)}</span><div class="reimburse-detail">${listToText(stats.elfList)}</div></div>
+                    <div style="width:45%"><b style="color:#6c5ce7; font-size:11px;">🧚 待請款</b><br><span style="font-size:18px; font-weight:bold;">$${Math.round(stats.elf_r)}</span><div class="reimburse-detail">${listToText(stats.elfList)}</div></div>
                     <div style="width:1px; background:#e0c3fc;"></div>
-                    <div style="width:45%"><b style="color:#6c5ce7; font-size:11px;">🍉 西瓜待請款</b><br><span style="font-size:18px; font-weight:bold;">$${Math.round(stats.water_r)}</span><div class="reimburse-detail">${listToText(stats.waterList)}</div></div>
+                    <div style="width:45%"><b style="color:#6c5ce7; font-size:11px;">🍉 待請款</b><br><span style="font-size:18px; font-weight:bold;">$${Math.round(stats.water_r)}</span><div class="reimburse-detail">${listToText(stats.waterList)}</div></div>
                 </div>
                 <button class="settle-btn" onclick="settleAll()">💰 結清並身分反轉</button>
             </div>
@@ -208,52 +171,50 @@
         const filtered = localData.filter(i => (filter === "全部" || (filter === "待請款" && i.is_reimburse) || i.category === filter));
         listDiv.innerHTML = filtered.map(i => `
             <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">
-                <div><span class="tag" style="background:${i.payer === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
-                ${i.is_reimburse ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅ 已結' : '💸 待請'}</span>` : ''}
+                <div><span class="tag" style="background:${i.payer==='小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
+                ${i.is_reimburse ? `<span class="tag ${i.is_settled?'tag-settled':'tag-reimburse'}">${i.is_settled?'✅已結':'💸待請'}</span>`:''}
                 <b>${i.title}</b><small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small></div>
                 <div class="amount-text">$${i.amount}</div>
             </div>`).join('');
     }
 
     async function settleAll() {
-        if (!confirm("結清將會身分反轉，金額會轉移到對方身上，確定嗎？")) return;
-        const db = getDb();
+        if (!confirm("確定要結清並移轉金額嗎？")) return;
+        const db = initDb();
         const { data: targets } = await db.from('expenses').select('*').eq('is_reimburse', true).eq('is_settled', false);
-        if (!targets || !targets.length) return alert("沒東西結清。");
+        if (!targets?.length) return alert("沒有待請款。");
+
         await Promise.all(targets.map(item => {
             const newPayer = (item.payer.trim() === "小精靈") ? "西瓜" : "小精靈";
-            return db.from('expenses').update({ payer: newPayer, title: `(代付結清) ${item.title}`, is_settled: true }).eq('id', item.id);
+            return db.from('expenses').update({ payer: newPayer, is_settled: true, title: `(結清) ${item.title}` }).eq('id', item.id);
         }));
-        alert("✨ 結清與金額移轉成功！");
+        alert("✨ 結清成功，身分已反轉！");
         setTimeout(refresh, 500);
     }
 
     document.getElementById('addBtn').onclick = async () => {
-        const db = getDb();
+        const db = initDb();
         const t = document.getElementById('title').value;
         const a = document.getElementById('amount').value;
-        const d = document.getElementById('custom-date').value;
         const c = document.getElementById('category').value;
-        
         if (!t || !a) return alert("要填寫項目和金額喔！");
+        
         if (c === "罰款") alert("👊 揍你喔！下次小心一點啦！");
 
+        const d = document.getElementById('custom-date').value;
         let finalDate = d ? new Date(d + 'T' + new Date().toLocaleTimeString('it-IT')) : new Date();
+
         await db.from('expenses').insert([{
             title: t, amount: Number(a),
             payer: document.getElementById('payer').value,
             category: c,
-            need_type: document.getElementById('need_type').value,
             is_reimburse: document.getElementById('is_reimburse').checked,
             is_settled: false,
             created_at: finalDate.toISOString()
         }]);
 
-        document.getElementById('title').value = "";
-        document.getElementById('amount').value = "";
-        document.getElementById('is_reimburse').checked = false;
-        setDefaultDate();
-        refresh();
+        document.getElementById('title').value = ""; document.getElementById('amount').value = "";
+        document.getElementById('is_reimburse').checked = false; refresh();
     };
 
     window.onload = () => { setDefaultDate(); refresh(); };

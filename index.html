@@ -6,54 +6,53 @@
     <title>💕 小精靈 & 西瓜 記帳本 💕</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-    body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: #ffe3ef; padding: 15px; color: #6d2942; margin: 0; }
-    .container { max-width: 450px; margin: auto; }
-    .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; }
-    h2, h3 { margin: 0 0 15px 0; color: #df4d8f; font-size: 20px; }
-    label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
-    
-    /* ✨ 修正跑版的核心 CSS ✨ */
-    input, select { 
-        width: 100%; 
-        height: 45px; /* 固定高度讓大家一樣齊 */
-        padding: 0 12px; /* 左右內縮，上下靠高度撐開 */
-        margin-top: 5px; 
-        border-radius: 12px; 
-        border: 1px solid #f3a9c6; 
-        box-sizing: border-box; /* 確保寬度包含邊框，不超出 */
-        font-size: 16px; 
-        outline: none; 
-        display: block;
-        background-color: white;
-        appearance: none; /* 去除瀏覽器預設樣式 */
-        -webkit-appearance: none;
-    }
+        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: #ffe3ef; padding: 15px; color: #6d2942; margin: 0; }
+        .container { max-width: 450px; margin: auto; }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; }
+        h2, h3 { margin: 0 0 15px 0; color: #df4d8f; font-size: 20px; }
+        label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
+        
+        input, select { 
+            width: 100%; 
+            height: 45px; 
+            padding: 0 12px; 
+            margin-top: 5px; 
+            border-radius: 12px; 
+            border: 1px solid #f3a9c6; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+            outline: none; 
+            display: block;
+            background-color: white;
+            appearance: none; 
+            -webkit-appearance: none;
+        }
 
-    /* 針對日期控制項目的特殊修正 */
-    input[type="date"] {
-        line-height: 45px; /* 讓文字垂直居中 */
-        font-family: sans-serif;
-    }
+        input[type="date"] {
+            line-height: 45px;
+            font-family: sans-serif;
+        }
 
-    button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; }
-    #stats-board { background: #fff; border: 2px dashed #ff97be; border-radius: 20px; padding: 15px; }
-    .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; margin: 5px 0; }
-    .reimburse-box { background: #fdf2ff; border-radius: 12px; padding: 12px; margin-top: 15px; border: 1px solid #e0c3fc; }
-    .reimburse-detail { text-align: left; font-size: 11px; color: #6c5ce7; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.5; }
-    .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; text-align: left; }
-    .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 4px; color: white; font-weight: bold; }
-    .tag-settled { background: #b2bec3; }
-    .tag-reimburse { background: #6c5ce7; }
-    .amount-text { font-size: 18px; font-weight: bold; color: #cb457e; }
-    .settle-btn { background: #6c5ce7; font-size: 14px; padding: 10px; margin-top: 10px; width: 100%; border-radius: 10px; color: white; border: none; cursor: pointer; }
-    .checkbox-container { display: flex; align-items: center; background: #fff2f8; padding: 12px; border-radius: 12px; margin-top: 15px; cursor: pointer; border: 1px solid #f3a9c6; width: 100%; box-sizing: border-box; }
-    .checkbox-container input { width: 20px !important; height: 20px !important; margin: 0 10px 0 0 !important; cursor: pointer; flex-shrink: 0; }
-        /* 專門針對歷史紀錄篩選列的修正 */
-#filter-payer, #filter-category {
-    margin-top: 0 !important; 
-    flex: 1;
-}
-</style>
+        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; }
+        #stats-board { background: #fff; border: 2px dashed #ff97be; border-radius: 20px; padding: 15px; }
+        .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; margin: 5px 0; }
+        .reimburse-box { background: #fdf2ff; border-radius: 12px; padding: 12px; margin-top: 15px; border: 1px solid #e0c3fc; }
+        .reimburse-detail { text-align: left; font-size: 11px; color: #6c5ce7; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.5; }
+        .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; text-align: left; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 4px; color: white; font-weight: bold; }
+        .tag-settled { background: #b2bec3; }
+        .tag-reimburse { background: #6c5ce7; }
+        .amount-text { font-size: 18px; font-weight: bold; color: #cb457e; }
+        .settle-btn { background: #6c5ce7; font-size: 14px; padding: 10px; margin-top: 10px; width: 100%; border-radius: 10px; color: white; border: none; cursor: pointer; }
+        .checkbox-container { display: flex; align-items: center; background: #fff2f8; padding: 12px; border-radius: 12px; margin-top: 15px; cursor: pointer; border: 1px solid #f3a9c6; width: 100%; box-sizing: border-box; }
+        .checkbox-container input { width: 20px !important; height: 20px !important; margin: 0 10px 0 0 !important; cursor: pointer; flex-shrink: 0; }
+        
+        /* 篩選列專用修正 */
+        #filter-payer, #filter-category {
+            margin-top: 0 !important; 
+            flex: 1;
+        }
+    </style>
 </head>
 <body>
 
@@ -101,32 +100,32 @@
     </div>
 
     <div class="card">
-    <h3>📜 歷史紀錄</h3>
-    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-        <select id="filter-payer" onchange="renderList()">
-            <option value="全部">👤 全部人</option>
-            <option value="小精靈">🧚 小精靈</option>
-            <option value="西瓜">🍉 西瓜</option>
-        </select>
-        
-        <select id="filter-category" onchange="renderList()">
-            <option value="全部">📂 全部類別</option>
-            <option value="待請款">💸 待請款項</option>
-            <option value="餐飲">🍔 餐飲</option>
-            <option value="餐費預付">💰 餐費預付</option>
-            <option value="住宿">🏨 住宿</option>
-            <option value="交通">🚗 交通</option>
-            <option value="購物">🛍️ 購物</option>
-            <option value="電話及會員">📱 電話及會員</option>
-            <option value="醫療">🏥 醫療</option>
-            <option value="儲值">💵 儲值</option>
-            <option value="罰款">🚔 罰款</option>
-            <option value="狗勾">🐶 狗勾</option>
-            <option value="爸爸贊助">🎁 爸爸贊助</option>
-            <option value="其他">✨ 其他</option>
-        </select>
+        <h3>📜 歷史紀錄</h3>
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <select id="filter-payer" onchange="renderList()">
+                <option value="全部">👤 全部人</option>
+                <option value="小精靈">🧚 小精靈</option>
+                <option value="西瓜">🍉 西瓜</option>
+            </select>
+            <select id="filter-category" onchange="renderList()">
+                <option value="全部">📂 全部類別</option>
+                <option value="待請款">💸 待請款項</option>
+                <option value="餐飲">🍔 餐飲</option>
+                <option value="餐費預付">💰 餐費預付</option>
+                <option value="住宿">🏨 住宿</option>
+                <option value="交通">🚗 交通</option>
+                <option value="購物">🛍️ 購物</option>
+                <option value="電話及會員">📱 電話及會員</option>
+                <option value="醫療">🏥 醫療</option>
+                <option value="儲值">💵 儲值</option>
+                <option value="罰款">🚔 罰款</option>
+                <option value="狗勾">🐶 狗勾</option>
+                <option value="爸爸贊助">🎁 爸爸贊助</option>
+                <option value="其他">✨ 其他</option>
+            </select>
+        </div>
+        <div id="record-list"></div>
     </div>
-    <div id="record-list"></div>
 </div>
 
 <script>
@@ -146,7 +145,7 @@
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
         const { data, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
-        if (error) return;
+        if (error) { console.error(error); return; }
         localData = data || [];
 
         let stats = { "小精靈": 0, "西瓜": 0, "total": 0, "elf_r": 0, "water_r": 0, "elfList": [], "waterList": [] };
@@ -189,40 +188,28 @@
     }
 
     function renderList() {
-    const filterPayer = document.getElementById('filter-payer').value;
-    const filterCat = document.getElementById('filter-category').value;
-    const listDiv = document.getElementById('record-list');
+        const filterPayer = document.getElementById('filter-payer').value;
+        const filterCat = document.getElementById('filter-category').value;
+        const listDiv = document.getElementById('record-list');
 
-    // 雙重過濾邏輯
-    const filtered = localData.filter(i => {
-        // 1. 檢查付款人
-        const matchPayer = (filterPayer === "全部" || i.payer.trim() === filterPayer);
-        
-        // 2. 檢查分類 (保留你原本的待請款邏輯)
-        let matchCat = false;
-        if (filterCat === "全部") {
-            matchCat = true;
-        } else if (filterCat === "待請款") {
-            matchCat = i.is_reimburse;
-        } else {
-            matchCat = (i.category === filterCat);
-        }
+        const filtered = localData.filter(i => {
+            const matchPayer = (filterPayer === "全部" || i.payer.trim() === filterPayer);
+            let matchCat = (filterCat === "全部" || (filterCat === "待請款" && i.is_reimburse) || i.category === filterCat);
+            return matchPayer && matchCat;
+        });
 
-        return matchPayer && matchCat;
-    });
-
-    listDiv.innerHTML = filtered.map(i => `
-        <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">
-            <div>
-                <span class="tag" style="background:${i.payer.trim() === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
-                <span class="tag" style="background:#888; font-size:9px;">${i.need_type || '需要'}</span>
-                ${i.is_reimburse ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
-                <b>${i.title}</b>
-                <small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small>
-            </div>
-            <div class="amount-text">$${i.amount}</div>
-        </div>`).join('');
-}
+        listDiv.innerHTML = filtered.map(i => `
+            <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">
+                <div>
+                    <span class="tag" style="background:${i.payer.trim() === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
+                    <span class="tag" style="background:#888; font-size:9px;">${i.need_type || '需要'}</span>
+                    ${i.is_reimburse ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
+                    <b>${i.title}</b>
+                    <small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small>
+                </div>
+                <div class="amount-text">$${i.amount}</div>
+            </div>`).join('');
+    }
 
     async function settleAll() {
         if (!confirm("結清將會反轉付款人並轉移金額，確定嗎？")) return;
@@ -238,7 +225,8 @@
                 title: `(結清) ${item.title}` 
             }).eq('id', item.id);
         }
-        alert("✨ 結清完成，金額已轉移！"); refresh();
+        alert("✨ 結清完成，金額已轉移！"); 
+        refresh();
     }
 
     document.getElementById('addBtn').onclick = async () => {
@@ -251,11 +239,9 @@
         const nt = document.getElementById('need_type').value;
         const r = document.getElementById('is_reimburse').checked;
 
-        // 項目改為選填：若為空字串，給予預設值
         if (!t.trim()) t = "未命名項目";
-        
         if (!a) return alert("金額還是要填喔！");
-        if (c === "罰款") alert("👊 揍你喔！小心一點！");
+        if (c === "罰款") alert("👊 揍你喔！");
 
         let dateObj = d ? new Date(d + 'T' + new Date().toLocaleTimeString('it-IT')) : new Date();
 
@@ -271,7 +257,7 @@
         }]);
 
         if (error) {
-            alert("新增失敗！錯誤代碼：" + error.code + "\n訊息：" + error.message);
+            alert("新增失敗！代碼：" + error.code + "\n訊息：" + error.message);
         } else {
             document.getElementById('title').value = "";
             document.getElementById('amount').value = "";

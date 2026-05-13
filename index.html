@@ -164,18 +164,46 @@
     }
 
     function renderList() {
-        const filterPayer = document.getElementById('filter-payer').value;
-        const filterCat = document.getElementById('filter-category').value;
-        const listDiv = document.getElementById('record-list');
+    const filterPayer = document.getElementById('filter-payer').value;
+    const filterCat = document.getElementById('filter-category').value;
+    const listDiv = document.getElementById('record-list');
 
-        const filtered = localData.filter(i => {
-            const payerMatch = (filterPayer === "全部" || i.payer.trim() === filterPayer);
-            let catMatch = false;
-            if (filterCat === "全部") catMatch = true;
-            else if (filterCat === "待請款") catMatch = (i.is_reimburse === true);
-            else catMatch = (i.category === filterCat);
-            return payerMatch && catMatch;
-        });
+    const filtered = localData.filter(i => {
+        // 1. 付款人過濾 (確保轉成字串比較)
+        const payerMatch = (filterPayer === "全部" || String(i.payer).trim() === filterPayer);
+        
+        // 2. 分類過濾 (關鍵修復點)
+        let catMatch = false;
+        if (filterCat === "全部") {
+            catMatch = true;
+        } else if (filterCat === "待請款") {
+            // 同時相容布林值 true 和字串 "true"
+            catMatch = (i.is_reimburse === true || i.is_reimburse === "true");
+        } else {
+            catMatch = (i.category === filterCat);
+        }
+        
+        return payerMatch && catMatch;
+    });
+
+    // 重新渲染畫面
+    if (filtered.length === 0) {
+        listDiv.innerHTML = `<p style="color:#999; margin-top:20px;">📭 沒有找到符合的紀錄</p>`;
+        return;
+    }
+
+    listDiv.innerHTML = filtered.map(i => `
+        <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">
+            <div>
+                <span class="tag" style="background:${String(i.payer).trim() === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
+                <span class="tag" style="background:#888; font-size:9px;">${i.need_type || '需要'}</span>
+                ${(i.is_reimburse === true || i.is_reimburse === "true") ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
+                <b>${i.title}</b>
+                <small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small>
+            </div>
+            <div class="amount-text">$${i.amount}</div>
+        </div>`).join('');
+}
 
         listDiv.innerHTML = filtered.map(i => `
             <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">

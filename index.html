@@ -143,26 +143,29 @@
         };
 
         localData.forEach(i => {
-            const amt = Number(i.amount);
-            const payer = i.payer ? i.payer.trim() : "";
-            const recordDate = new Date(i.created_at);
-            const isThisMonth = recordDate >= startThisMonth;
+    const amt = Number(i.amount);
+    const payer = i.payer.trim(); // 這裡抓到的會是更新後的「西瓜」
+    const date = new Date(i.created_at);
 
-            if (isThisMonth) {
-                if (stats[payer] !== undefined) stats[payer] += amt;
-                stats.total += amt;
-            }
+    // 只要是本月的紀錄，就根據「目前的付款人」是誰，就加在誰頭上
+    if (date >= startOfMonth) {
+        if (stats[payer] !== undefined) {
+            stats[payer] += amt; // 如果 payer 變成了西瓜，這筆錢就會從小精靈身上移走
+        }
+        stats.total += amt;
+    }
 
-            if (i.is_reimburse && !i.is_settled) {
-                if (payer === "小精靈") {
-                    stats["小精靈待請款額"] += amt;
-                    stats.elfList.push(i);
-                } else if (payer === "西瓜") {
-                    stats["西瓜待請款額"] += amt;
-                    stats.waterList.push(i);
-                }
-            }
-        });
+    // 這裡只是顯示「下方的待請款小清單」，不影響上面的個人總支出
+    if (i.is_reimburse && !i.is_settled) {
+        if (payer === "小精靈") { 
+            stats.elf_r += amt; 
+            stats.elfList.push(i); 
+        } else { 
+            stats.water_r += amt; 
+            stats.waterList.push(i); 
+        }
+    }
+});
 
         updateBoardUI(stats);
         renderList();
@@ -219,22 +222,35 @@
     }
 
     async function settleAll() {
-        if (!confirm("結清後，待請款項目將會『身分反轉』，金額將計入對方支出。確定嗎？")) return;
-        const db = getDb();
-        const { data: targets } = await db.from('expenses').select('*').eq('is_reimburse', true).eq('is_settled', false);
-        if (!targets || targets.length === 0) return alert("目前沒有待請款項。");
+    if (!confirm("結清將會身分反轉，金額會轉移到對方身上，確定嗎？")) return;
+    const db = getDb();
+    
+    // 1. 抓取目標
+    const { data: targets } = await db.from('expenses')
+        .select('*')
+        .eq('is_reimburse', true)
+        .eq('is_settled', false);
+    
+    if (!targets || !targets.length) return alert("目前沒有待請款項。");
 
-        const updatePromises = targets.map(item => {
-            const originalPayer = item.payer.trim();
-            const newPayer = (originalPayer === "小精靈") ? "西瓜" : "小精靈";
-            const newTitle = `(${originalPayer}代付結清) ${item.title}`;
-            return db.from('expenses').update({ payer: newPayer, title: newTitle, is_settled: true }).eq('id', item.id);
-        });
+    // 2. 使用 Promise.all 確保「所有項目」都更新成功
+    await Promise.all(targets.map(item => {
+        const originalPayer = item.payer.trim();
+        const newPayer = (originalPayer === "小精靈") ? "西瓜" : "小精靈";
+        return db.from('expenses').update({ 
+            payer: newPayer, 
+            title: `(代付結清) ${item.title}`, 
+            is_settled: true 
+        }).eq('id', item.id);
+    }));
 
-        await Promise.all(updatePromises);
-        alert("✨ 結清與身分轉換完成！");
-        setTimeout(refresh, 500);
-    }
+    alert("✨ 結清與金額移轉成功！");
+    
+    // 3. 稍微延遲 500 毫秒，等資料庫同步完成後才刷新
+    setTimeout(() => {
+        refresh();
+    }, 500);
+}
 
     document.getElementById('addBtn').onclick = async () => {
         const db = getDb();
@@ -242,6 +258,9 @@
         const a = document.getElementById('amount').value;
         const d = document.getElementById('custom-date').value;
         if (!t || !a) return alert("要填寫項目和金額喔！");
+        // --- ✨ 就是這段！揍你喔邏輯 ✨ ---
+        if (c === "罰款") {
+            alert("👊 揍你喔！");
 
         let finalDate = d ? new Date(d + 'T' + new Date().toLocaleTimeString('it-IT')) : new Date();
         await db.from('expenses').insert([{

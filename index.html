@@ -82,34 +82,57 @@
     }
 
     async function refresh() {
-        const db = getDb();
-        if (!db) { setTimeout(refresh, 500); return; }
+    const db = getDb();
+    if (!db) { setTimeout(refresh, 500); return; }
 
-        const now = new Date();
-        const startThis = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const now = new Date();
+    const startThis = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-        const { data: allRecords } = await db.from('expenses').select('*').order('created_at', { ascending: false });
+    const { data: allRecords } = await db.from('expenses').select('*').order('created_at', { ascending: false });
+    
+    // 初始化統計資料
+    let stats = { "小精靈": 0, "西瓜": 0, "total": 0, "小精靈待請款": 0, "西瓜待請款": 0 };
+
+    (allRecords || []).forEach(i => {
+        const amt = Number(i.amount);
+        const payer = i.payer.trim();
+        const isThisMonth = new Date(i.created_at) >= new Date(startThis);
+
+        if (isThisMonth) {
+            // 【重要更動】：不論是不是待請款，只要是本月支出，通通計入「實質總支出」與「個人支出」
+            if (stats[payer] !== undefined) stats[payer] += amt;
+            stats.total += amt;
+        }
+
+        // 待請款看板邏輯：依然只統計「尚未結清」的代墊款
+        if (i.is_reimburse && !i.is_settled) {
+            if (payer === "小精靈") stats["小精靈待請款"] += amt;
+            else if (payer === "西瓜") stats["西瓜待請款"] += amt;
+        }
+    });
+
+    // 更新看板 UI (與之前相同，但數值邏輯已變)
+    document.getElementById('stats-board').innerHTML = `
+        <h4 style="margin:0; color:#df4d8f;">📅 本月實質總支出</h4>
+        <div class="total-amount">$${stats.total}</div>
         
-        let stats = { "小精靈": 0, "西瓜": 0, "total": 0, "小精靈待請款": 0, "西瓜待請款": 0 };
+        <div style="display:flex; justify-content: space-around; font-size:13px; color:#888; margin-bottom:10px;">
+            <span>🧚 個人: $${stats["小精靈"]}</span>
+            <span>🍉 個人: $${stats["西瓜"]}</span>
+        </div>
 
-        (allRecords || []).forEach(i => {
-            const amt = Number(i.amount);
-            const payer = i.payer.trim();
-            const isThisMonth = new Date(i.created_at) >= new Date(startThis);
+        <div class="reimburse-box">
+            <div style="display:flex; justify-content: space-around; margin-bottom:10px;">
+                <div><div style="color:#6c5ce7; font-size:12px; font-weight:bold;">🧚 小精靈待請款</div><div style="font-size:20px; font-weight:bold;">$${stats["小精靈待請款"]}</div></div>
+                <div style="width:1px; background:#e0c3fc;"></div>
+                <div><div style="color:#6c5ce7; font-size:12px; font-weight:bold;">🍉 西瓜待請款</div><div style="font-size:20px; font-weight:bold;">$${stats["西瓜待請款"]}</div></div>
+            </div>
+            <button class="settle-btn" onclick="settleAll()">💰 結清目前的待請款</button>
+        </div>
+    `;
 
-            if (i.is_reimburse) {
-                // 待請款：只有「尚未結清」的才會出現在看板上
-                if (!i.is_settled) {
-                    if (payer === "小精靈") stats["小精靈待請款"] += amt;
-                    else if (payer === "西瓜") stats["西瓜待請款"] += amt;
-                }
-            } else if (isThisMonth) {
-                // 正常支出：只算本月的
-                if (stats[payer] !== undefined) stats[payer] += amt;
-                stats.total += amt;
-            }
-        });
-
+    // ... 清單顯示部分保持不變 ...
+}
         // 更新看板
         document.getElementById('stats-board').innerHTML = `
             <h4 style="margin:0; color:#df4d8f;">📅 本月實質總支出</h4>

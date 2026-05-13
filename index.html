@@ -131,23 +131,7 @@
         </div>
     `;
 
-    // ... 清單顯示部分保持不變 ...
-}
-        // 更新看板
-        document.getElementById('stats-board').innerHTML = `
-            <h4 style="margin:0; color:#df4d8f;">📅 本月實質總支出</h4>
-            <div class="total-amount">$${stats.total}</div>
-            
-            <div class="reimburse-box">
-                <div style="display:flex; justify-content: space-around; margin-bottom:10px;">
-                    <div><div style="color:#6c5ce7; font-size:12px; font-weight:bold;">🧚 小精靈待請款</div><div style="font-size:20px; font-weight:bold;">$${stats["小精靈待請款"]}</div></div>
-                    <div style="width:1px; background:#e0c3fc;"></div>
-                    <div><div style="color:#6c5ce7; font-size:12px; font-weight:bold;">🍉 西瓜待請款</div><div style="font-size:20px; font-weight:bold;">$${stats["西瓜待請款"]}</div></div>
-                </div>
-                <button class="settle-btn" onclick="settleAll()">💰 按此結清所有待請款</button>
-            </div>
-        `;
-
+        
         // 更新清單
         document.getElementById('record-list').innerHTML = (allRecords || []).map(item => `
             <div class="record-item" style="${item.is_settled ? 'opacity: 0.6;' : ''}">

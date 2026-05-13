@@ -48,6 +48,11 @@
     .settle-btn { background: #6c5ce7; font-size: 14px; padding: 10px; margin-top: 10px; width: 100%; border-radius: 10px; color: white; border: none; cursor: pointer; }
     .checkbox-container { display: flex; align-items: center; background: #fff2f8; padding: 12px; border-radius: 12px; margin-top: 15px; cursor: pointer; border: 1px solid #f3a9c6; width: 100%; box-sizing: border-box; }
     .checkbox-container input { width: 20px !important; height: 20px !important; margin: 0 10px 0 0 !important; cursor: pointer; flex-shrink: 0; }
+        /* 專門針對歷史紀錄篩選列的修正 */
+#filter-payer, #filter-category {
+    margin-top: 0 !important; 
+    flex: 1;
+}
 </style>
 </head>
 <body>
@@ -184,21 +189,40 @@
     }
 
     function renderList() {
-        const filter = document.getElementById('filter-category').value;
-        const listDiv = document.getElementById('record-list');
-        const filtered = localData.filter(i => (filter === "全部" || (filter === "待請款" && i.is_reimburse) || i.category === filter));
-        listDiv.innerHTML = filtered.map(i => `
-            <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">
-                <div>
-                    <span class="tag" style="background:${i.payer === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
-                    <span class="tag" style="background:#888; font-size:9px;">${i.need_type || '需要'}</span>
-                    ${i.is_reimburse ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
-                    <b>${i.title}</b>
-                    <small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small>
-                </div>
-                <div class="amount-text">$${i.amount}</div>
-            </div>`).join('');
-    }
+    const filterPayer = document.getElementById('filter-payer').value;
+    const filterCat = document.getElementById('filter-category').value;
+    const listDiv = document.getElementById('record-list');
+
+    // 雙重過濾邏輯
+    const filtered = localData.filter(i => {
+        // 1. 檢查付款人
+        const matchPayer = (filterPayer === "全部" || i.payer.trim() === filterPayer);
+        
+        // 2. 檢查分類 (保留你原本的待請款邏輯)
+        let matchCat = false;
+        if (filterCat === "全部") {
+            matchCat = true;
+        } else if (filterCat === "待請款") {
+            matchCat = i.is_reimburse;
+        } else {
+            matchCat = (i.category === filterCat);
+        }
+
+        return matchPayer && matchCat;
+    });
+
+    listDiv.innerHTML = filtered.map(i => `
+        <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">
+            <div>
+                <span class="tag" style="background:${i.payer.trim() === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
+                <span class="tag" style="background:#888; font-size:9px;">${i.need_type || '需要'}</span>
+                ${i.is_reimburse ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
+                <b>${i.title}</b>
+                <small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small>
+            </div>
+            <div class="amount-text">$${i.amount}</div>
+        </div>`).join('');
+}
 
     async function settleAll() {
         if (!confirm("結清將會反轉付款人並轉移金額，確定嗎？")) return;

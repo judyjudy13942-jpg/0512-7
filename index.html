@@ -18,8 +18,6 @@
             appearance: none; -webkit-appearance: none;
         }
 
-        input[type="date"] { line-height: 45px; font-family: sans-serif; }
-
         button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; }
         #stats-board { background: #fff; border: 2px dashed #ff97be; border-radius: 20px; padding: 15px; min-height: 100px; }
         .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; margin: 5px 0; }
@@ -34,6 +32,8 @@
         .checkbox-container { display: flex; align-items: center; background: #fff2f8; padding: 12px; border-radius: 12px; margin-top: 15px; cursor: pointer; border: 1px solid #f3a9c6; width: 100%; box-sizing: border-box; }
         .checkbox-container input { width: 20px !important; height: 20px !important; margin: 0 10px 0 0 !important; cursor: pointer; flex-shrink: 0; }
         
+        /* 歷史紀錄篩選列並排 */
+        .filter-row { display: flex; gap: 8px; margin-bottom: 10px; }
         #filter-payer, #filter-category { margin-top: 0 !important; flex: 1; }
     </style>
 </head>
@@ -48,7 +48,7 @@
         <input id="custom-date" type="date">
         <label>誰付錢</label>
         <select id="payer"><option value="小精靈">小精靈</option><option value="西瓜">西瓜</option></select>
-        <label>項目名稱 (選填)</label>
+        <label>項目名稱</label>
         <input id="title" type="text" placeholder="沒填預設為：未命名項目">
         <label>金額</label>
         <input id="amount" type="number" inputmode="decimal" placeholder="請輸入金額">
@@ -83,31 +83,32 @@
     </div>
 
     <div class="card">
-    <h3>📜 歷史紀錄</h3>
-    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-        <select id="filter-payer">
-            <option value="全部">👤 全部人</option>
-            <option value="小精靈">🧚 小精靈</option>
-            <option value="西瓜">🍉 西瓜</option>
-        </select>
-        <select id="filter-category">
-            <option value="全部">📂 全部類別</option>
-            <option value="待請款">💸 待請款項</option>
-            <option value="餐飲">🍔 餐飲</option>
-            <option value="餐費預付">💰 餐費預付</option>
-            <option value="住宿">🏨 住宿</option>
-            <option value="交通">🚗 交通</option>
-            <option value="購物">🛍️ 購物</option>
-            <option value="電話及會員">📱 電話及會員</option>
-            <option value="醫療">🏥 醫療</option>
-            <option value="儲值">💵 儲值</option>
-            <option value="罰款">🚔 罰款</option>
-            <option value="狗勾">🐶 狗勾</option>
-            <option value="爸爸贊助">🎁 爸爸贊助</option>
-            <option value="其他">✨ 其他</option>
-        </select>
+        <h3>📜 歷史紀錄</h3>
+        <div class="filter-row">
+            <select id="filter-payer">
+                <option value="全部">👤 全部人</option>
+                <option value="小精靈">🧚 小精靈</option>
+                <option value="西瓜">🍉 西瓜</option>
+            </select>
+            <select id="filter-category">
+                <option value="全部">📂 全部類別</option>
+                <option value="待請款">💸 待請款項</option>
+                <option value="餐飲">🍔 餐飲</option>
+                <option value="餐費預付">💰 餐費預付</option>
+                <option value="住宿">🏨 住宿</option>
+                <option value="交通">🚗 交通</option>
+                <option value="購物">🛍️ 購物</option>
+                <option value="電話及會員">📱 電話及會員</option>
+                <option value="醫療">🏥 醫療</option>
+                <option value="儲值">💵 儲值</option>
+                <option value="罰款">🚔 罰款</option>
+                <option value="狗勾">🐶 狗勾</option>
+                <option value="爸爸贊助">🎁 爸爸贊助</option>
+                <option value="其他">✨ 其他</option>
+            </select>
+        </div>
+        <div id="record-list"></div>
     </div>
-    <div id="record-list"></div>
 </div>
 
 <script>
@@ -117,32 +118,58 @@
 
     const getDb = () => { if (!client && window.supabase) client = window.supabase.createClient(SB_URL, SB_KEY); return client; };
 
+    function renderList() {
+        const filterPayer = document.getElementById('filter-payer').value;
+        const filterCat = document.getElementById('filter-category').value;
+        const listDiv = document.getElementById('record-list');
+
+        const filtered = localData.filter(i => {
+            const pMatch = (filterPayer === "全部" || i.payer.trim() === filterPayer);
+            let cMatch = false;
+            if (filterCat === "全部") cMatch = true;
+            else if (filterCat === "待請款") cMatch = (i.is_reimburse === true || i.is_reimburse === "true");
+            else cMatch = (i.category === filterCat);
+            return pMatch && cMatch;
+        });
+
+        listDiv.innerHTML = filtered.map(i => `
+            <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">
+                <div>
+                    <span class="tag" style="background:${i.payer.trim() === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
+                    <span class="tag" style="background:#888; font-size:9px;">${i.need_type || '需要'}</span>
+                    ${(i.is_reimburse === true || i.is_reimburse === "true") ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
+                    <b>${i.title || '未命名'}</b>
+                    <small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small>
+                </div>
+                <div class="amount-text">$${i.amount}</div>
+            </div>`).join('');
+    }
+
     async function refresh() {
         const db = getDb(); if (!db) return;
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
         const { data, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
-        if (error) { document.getElementById('stats-board').innerHTML = "加載出錯了..."; return; }
+        if (error) return;
         localData = data || [];
 
         let stats = { "小精靈": 0, "西瓜": 0, "total": 0, "elf_r": 0, "water_r": 0, "elfList": [], "waterList": [] };
         localData.forEach(i => {
             const amt = Number(i.amount);
-            const payer = (i.payer || "").trim();
+            const payer = i.payer.trim();
             const date = new Date(i.created_at);
             if (date >= startOfMonth) {
                 if (payer === "小精靈") stats["小精靈"] += amt;
                 else if (payer === "西瓜") stats["西瓜"] += amt;
                 stats.total += amt;
             }
-            if (i.is_reimburse && !i.is_settled) {
+            if ((i.is_reimburse === true || i.is_reimburse === "true") && !i.is_settled) {
                 if (payer === "小精靈") { stats.elf_r += amt; stats.elfList.push(i); }
                 else if (payer === "西瓜") { stats.water_r += amt; stats.waterList.push(i); }
             }
         });
 
-        const listToText = (list) => list.length ? list.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無細項';
+        const listToText = (l) => l.length ? l.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無細項';
         document.getElementById('stats-board').innerHTML = `
             <h4 style="margin:0; color:#df4d8f;">📅 本月實質總支出</h4>
             <div class="total-amount">$${Math.round(stats.total)}</div>
@@ -163,61 +190,6 @@
         renderList();
     }
 
-    function renderList() {
-    const filterPayer = document.getElementById('filter-payer').value;
-    const filterCat = document.getElementById('filter-category').value;
-    const listDiv = document.getElementById('record-list');
-
-    const filtered = localData.filter(i => {
-        // 1. 付款人過濾 (確保轉成字串比較)
-        const payerMatch = (filterPayer === "全部" || String(i.payer).trim() === filterPayer);
-        
-        // 2. 分類過濾 (關鍵修復點)
-        let catMatch = false;
-        if (filterCat === "全部") {
-            catMatch = true;
-        } else if (filterCat === "待請款") {
-            // 同時相容布林值 true 和字串 "true"
-            catMatch = (i.is_reimburse === true || i.is_reimburse === "true");
-        } else {
-            catMatch = (i.category === filterCat);
-        }
-        
-        return payerMatch && catMatch;
-    });
-
-    // 重新渲染畫面
-    if (filtered.length === 0) {
-        listDiv.innerHTML = `<p style="color:#999; margin-top:20px;">📭 沒有找到符合的紀錄</p>`;
-        return;
-    }
-
-    listDiv.innerHTML = filtered.map(i => `
-        <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">
-            <div>
-                <span class="tag" style="background:${String(i.payer).trim() === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
-                <span class="tag" style="background:#888; font-size:9px;">${i.need_type || '需要'}</span>
-                ${(i.is_reimburse === true || i.is_reimburse === "true") ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
-                <b>${i.title}</b>
-                <small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small>
-            </div>
-            <div class="amount-text">$${i.amount}</div>
-        </div>`).join('');
-}
-
-        listDiv.innerHTML = filtered.map(i => `
-            <div class="record-item" style="${i.is_settled ? 'opacity: 0.6;' : ''}">
-                <div>
-                    <span class="tag" style="background:${i.payer.trim() === '小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
-                    <span class="tag" style="background:#888; font-size:9px;">${i.need_type || '需要'}</span>
-                    ${i.is_reimburse ? `<span class="tag ${i.is_settled ? 'tag-settled' : 'tag-reimburse'}">${i.is_settled ? '✅已結' : '💸待請'}</span>` : ''}
-                    <b>${i.title}</b>
-                    <small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small>
-                </div>
-                <div class="amount-text">$${i.amount}</div>
-            </div>`).join('');
-    }
-
     async function settleAll() {
         if (!confirm("結清將會反轉付款人並轉移金額，確定嗎？")) return;
         const db = getDb();
@@ -232,6 +204,7 @@
 
     window.onload = () => {
         document.getElementById('custom-date').value = new Date().toISOString().split('T')[0];
+        
         document.getElementById('addBtn').onclick = async () => {
             const db = getDb();
             let t = document.getElementById('title').value || "未命名項目";
@@ -243,12 +216,9 @@
             const r = document.getElementById('is_reimburse').checked;
 
             if (!a) return alert("金額還是要填喔！");
-            
-            // ✨ 經典對白加回去！
             if (c === "罰款") alert("👊 揍你喔！");
 
             let dateObj = d ? new Date(d + 'T' + new Date().toLocaleTimeString('it-IT')) : new Date();
-
             const { error } = await db.from('expenses').insert([{
                 title: t, amount: Number(a), payer: p, category: c, need_type: nt, is_reimburse: r, is_settled: false, created_at: dateObj.toISOString()
             }]);
@@ -261,6 +231,7 @@
                 refresh();
             }
         };
+
         document.getElementById('filter-payer').onchange = renderList;
         document.getElementById('filter-category').onchange = renderList;
         refresh();

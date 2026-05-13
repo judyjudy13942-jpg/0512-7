@@ -140,38 +140,50 @@
     }
 
     async function refresh() {
-        const db = getDb();
-        if (!db) { setTimeout(refresh, 500); return; }
+    const db = getDb();
+    if (!db) { setTimeout(refresh, 500); return; }
 
-        const now = new Date();
-        const startThis = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const now = new Date();
+    const startThis = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-        const { data: allRecords } = await db.from('expenses').select('*').order('created_at', { ascending: false });
-        localData = allRecords || [];
+    // 每次 refresh 都重新抓最新資料
+    const { data: allRecords, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
+    if (error) return;
+    localData = allRecords || [];
 
-        let stats = { "小精靈": 0, "西瓜": 0, "total": 0, "小精靈待請款額": 0, "西瓜待請款額": 0, "elfList": [], "waterList": [] };
+    // 初始化：確保名字與資料庫一致
+    let stats = { "小精靈": 0, "西瓜": 0, "total": 0, "小精靈待請款額": 0, "西瓜待請款額": 0, "elfList": [], "waterList": [] };
 
-        localData.forEach(i => {
-            const amt = Number(i.amount);
-            const payer = i.payer.trim();
-            const recordDate = new Date(i.created_at);
-            const isThisMonth = recordDate >= new Date(startThis);
+    localData.forEach(i => {
+        const amt = Number(i.amount);
+        const payer = i.payer.trim(); // 確保移除前後空格
+        const isThisMonth = new Date(i.created_at) >= new Date(startThis);
 
-            if (isThisMonth) {
-                if (stats[payer] !== undefined) stats[payer] += amt;
-                stats.total += amt;
+        // --- 核心個人統計邏輯 ---
+        if (isThisMonth) {
+            // 這裡會依照「目前」資料庫紀錄的 payer 是誰，就加在誰頭上
+            if (stats[payer] !== undefined) {
+                stats[payer] += amt;
             }
+            stats.total += amt;
+        }
 
-            if (i.is_reimburse && !i.is_settled) {
-                if (payer === "小精靈") {
-                    stats["小精靈待請款額"] += amt;
-                    stats.elfList.push(i);
-                } else {
-                    stats["西瓜待請款額"] += amt;
-                    stats.waterList.push(i);
-                }
+        // --- 待請款細項邏輯 (只抓未結清的項目) ---
+        if (i.is_reimburse && !i.is_settled) {
+            if (payer === "小精靈") {
+                stats["小精靈待請款額"] += amt;
+                stats.elfList.push(i);
+            } else if (payer === "西瓜") {
+                stats["西瓜待請款額"] += amt;
+                stats.waterList.push(i);
             }
-        });
+        }
+    });
+
+    // 渲染看板 (保留之前的 UI)
+    renderStatsBoard(stats); 
+    renderList();
+}
 
         const listToText = (list) => list.length ? list.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無細項';
 
@@ -230,35 +242,36 @@
     if (!confirm("結清後，待請款項目將會『身分反轉』，金額將計入對方支出。確定嗎？")) return;
     const db = getDb();
     
-    // 1. 找出所有待請款且尚未結清的項目
-    const { data: targets, error: fetchError } = await db.from('expenses')
+    // 1. 抓取目前要結清的目標
+    const { data: targets } = await db.from('expenses')
         .select('*')
         .eq('is_reimburse', true)
         .eq('is_settled', false);
     
-    if (fetchError) return alert("抓取資料失敗：" + fetchError.message);
     if (!targets || targets.length === 0) return alert("目前沒有待請款項。");
 
-    // 2. 逐筆進行身分反轉與備註更新
-    for (const item of targets) {
+    // 2. 執行反轉 (使用 Promise.all 確保所有更新都完成)
+    const updatePromises = targets.map(item => {
         const originalPayer = item.payer.trim();
         const newPayer = (originalPayer === "小精靈") ? "西瓜" : "小精靈";
         const newTitle = `(${originalPayer}代付) ${item.title}`;
 
-        const { error: updateError } = await db.from('expenses').update({
-            payer: newPayer,   // 這裡變更了付款人，會直接影響看板統計
-            title: newTitle,
-            is_settled: true   // 標記為已結清
+        return db.from('expenses').update({
+            payer: newPayer,   // 轉給對方
+            title: newTitle,   // 加備註
+            is_settled: true   // 標記已結清
         }).eq('id', item.id);
-        
-        if (updateError) console.error("更新失敗:", updateError);
-    }
+    });
 
-    // 3. 強制重新抓取資料庫，確保看板更新
-    alert("✨ 結清完成！身分已移轉。");
-    await refresh(); 
+    await Promise.all(updatePromises);
+
+    alert("✨ 結清與轉移完成！");
+    
+    // 3. 強制延遲一下下 (0.5秒) 等 Supabase 資料同步，然後重新整理
+    setTimeout(() => {
+        refresh();
+    }, 500);
 }
-
     document.getElementById('addBtn').onclick = async () => {
         const db = getDb();
         const t = document.getElementById('title').value;

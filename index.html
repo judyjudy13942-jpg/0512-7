@@ -186,40 +186,41 @@
     }
 
     document.getElementById('addBtn').onclick = async () => {
-        const db = getDb();
-        const t = document.getElementById('title').value;
-        const a = document.getElementById('amount').value;
-        const d = document.getElementById('custom-date').value;
-        const c = document.getElementById('category').value;
-        const p = document.getElementById('payer').value;
-        const r = document.getElementById('is_reimburse').checked;
+    const db = getDb();
+    const t = document.getElementById('title').value;
+    const a = document.getElementById('amount').value;
+    const d = document.getElementById('custom-date').value;
+    const c = document.getElementById('category').value;
+    const p = document.getElementById('payer').value;
+    const r = document.getElementById('is_reimburse').checked;
 
-        if (!t || !a) return alert("項目跟金額都要填喔！");
-        if (c === "罰款") alert("👊 揍你喔！小心一點！");
+    if (!t || !a) return alert("項目跟金額都要填喔！");
+    if (c === "罰款") alert("👊 揍你喔！小心一點！");
 
-        // 處理日期與時間
-        let dateObj = d ? new Date(d + 'T' + new Date().toLocaleTimeString('it-IT')) : new Date();
+    let dateObj = d ? new Date(d + 'T' + new Date().toLocaleTimeString('it-IT')) : new Date();
 
-        const { error } = await db.from('expenses').insert([{
-            title: t, 
-            amount: Number(a),
-            payer: p,
-            category: c,
-            is_reimburse: r,
-            is_settled: false,
-            created_at: dateObj.toISOString()
-        }]);
+    // 🔴 這裡我加了錯誤診斷
+    const { error } = await db.from('expenses').insert([{
+        title: t, 
+        amount: Number(a),
+        payer: p,
+        category: c,
+        is_reimburse: r,
+        is_settled: false,
+        created_at: dateObj.toISOString()
+    }]);
 
-        if (error) {
-            alert("新增失敗，請檢查網路或資料庫欄位！");
-            console.error(error);
-        } else {
-            document.getElementById('title').value = "";
-            document.getElementById('amount').value = "";
-            document.getElementById('is_reimburse').checked = false;
-            refresh();
-        }
-    };
+    if (error) {
+        // 📢 這會告訴我們具體是什麼錯誤（例如：Could not find column "category"）
+        alert("新增失敗！錯誤訊息：" + error.message + "\n錯誤代碼：" + error.code);
+        console.error(error);
+    } else {
+        document.getElementById('title').value = "";
+        document.getElementById('amount').value = "";
+        document.getElementById('is_reimburse').checked = false;
+        refresh();
+    }
+};
 
     window.onload = () => { setDefaultDate(); refresh(); };
 </script>

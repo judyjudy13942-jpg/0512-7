@@ -96,8 +96,15 @@
     </div>
 
     <div class="card">
-        <h3>📜 歷史紀錄</h3>
-        <select id="filter-category" onchange="renderList()" style="margin-bottom:10px;">
+    <h3>📜 歷史紀錄</h3>
+    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+        <select id="filter-payer" onchange="renderList()">
+            <option value="全部">👤 全部人</option>
+            <option value="小精靈">🧚 小精靈</option>
+            <option value="西瓜">🍉 西瓜</option>
+        </select>
+        
+        <select id="filter-category" onchange="renderList()">
             <option value="全部">📂 全部類別</option>
             <option value="待請款">💸 待請款項</option>
             <option value="餐飲">🍔 餐飲</option>
@@ -113,8 +120,8 @@
             <option value="爸爸贊助">🎁 爸爸贊助</option>
             <option value="其他">✨ 其他</option>
         </select>
-        <div id="record-list"></div>
     </div>
+    <div id="record-list"></div>
 </div>
 
 <script>

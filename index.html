@@ -6,7 +6,6 @@
     <title>💕 小精靈 & 西瓜 記帳本本 💕</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        /* 基礎樣式重置 */
         * { box-sizing: border-box !important; -webkit-tap-highlight-color: transparent; }
         html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; background: #ffe3ef; }
         body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; padding: 15px; color: #6d2942; line-height: 1.4; }
@@ -17,7 +16,6 @@
         h2, h3 { margin: 0 0 12px 0; color: #df4d8f; font-size: 19px; text-align: center; }
         label { display: block; text-align: left; margin-top: 10px; font-size: 13px; font-weight: bold; color: #a35d78; }
         
-        /* 輸入框美化 */
         input, select { 
             width: 100% !important;
             height: 46px; 
@@ -35,7 +33,6 @@
         .row { display: flex; gap: 10px; }
         .row > div { flex: 1; }
 
-        /* 待請款勾選區 */
         .checkbox-row {
             display: flex; align-items: center; background: #fff2f8; padding: 12px 15px; border-radius: 12px; margin-top: 15px; border: 1px solid #f3a9c6; cursor: pointer; width: 100%;
             transition: 0.2s;
@@ -46,21 +43,18 @@
         }
         .checkbox-row span { font-size: 16px; font-weight: bold; color: #df4d8f; }
 
-        /* 統計面板 UI */
         .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; text-align: center; margin: 5px 0; }
         .reimburse-box { background: #fdf2ff; border-radius: 12px; padding: 15px; margin-top: 15px; border: 1px solid #e0c3fc; }
         .reimburse-grid { display: flex; justify-content: space-between; gap: 10px; }
         .reimburse-col { flex: 1; min-width: 0; }
         .reimburse-list { font-size: 11px; color: #6c5ce7; margin-top: 5px; line-height: 1.4; max-height: 100px; overflow-y: auto; }
 
-        /* 按鈕樣式 */
         button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; transition: 0.2s; box-shadow: 0 4px 0 #db5a8b; }
         button:active { transform: translateY(2px); box-shadow: 0 2px 0 #db5a8b; opacity: 0.9; }
         button:disabled { background: #ccc !important; box-shadow: 0 4px 0 #999 !important; cursor: not-allowed; transform: none !important; }
         
         .settle-btn { background: #6c5ce7; font-size: 14px; padding: 10px; border-radius: 10px; margin-top: 12px; height: auto; box-shadow: 0 3px 0 #5649b8; }
 
-        /* 列表樣式 */
         .filter-row { display: flex; gap: 8px; margin-bottom: 12px; }
         .filter-row select { height: 38px; font-size: 14px; margin-top: 0; }
         .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.3s ease; }
@@ -95,8 +89,8 @@
         <label>項目名稱</label>
         <input id="title" type="text" placeholder="例如：好吃的晚餐">
         
-        <label>金額</label>
-        <input id="amount" type="number" inputmode="decimal" placeholder="0">
+        <label>金額 (可輸入負數或0)</label>
+        <input id="amount" type="number" step="any" placeholder="0">
         
         <div class="row">
             <div>
@@ -163,7 +157,6 @@
 </div>
 
 <script>
-    // 配置資訊
     const SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxi8QHWjSitWQJUVTLntehHUYbm-QwyNp6c296bvCDxJIoc_k-Pq-Cu8R21JAiJx26n/exec";
@@ -171,7 +164,6 @@
     const db = window.supabase.createClient(SB_URL, SB_KEY);
     let localData = [];
 
-    // LINE 通知函數
     async function sendLineNotify(msg) {
         if (!GAS_URL) return;
         try {
@@ -184,16 +176,15 @@
         } catch (e) { console.error("通知失敗:", e); }
     }
 
-    // --- 核心：新增紀錄 (包含防止連點邏輯) ---
     async function handleAddRecord() {
         const btn = document.getElementById('addBtn');
         const amount = document.getElementById('amount').value;
         const title = document.getElementById('title').value || "未命名";
         
-        if (!amount) return alert("要輸入金額才可以喔！💸");
-        if (btn.disabled) return; // 防止重複執行
+        // 檢查是否為空字串 (允許 0 和 負數)
+        if (amount === "") return alert("請輸入金額！💸");
+        if (btn.disabled) return;
 
-        // 1. 鎖定按鈕並變更外觀
         btn.disabled = true;
         btn.innerText = "正在傳送中...";
         btn.style.backgroundColor = "#ffb3d1";
@@ -206,7 +197,6 @@
             const customDate = document.getElementById('custom-date').value;
             const finalDate = `${customDate}T${new Date().toTimeString().split(' ')[0]}.000Z`;
 
-            // 2. 存入 Supabase
             const { error } = await db.from('expenses').insert([{
                 title: title, 
                 amount: Number(amount), 
@@ -220,39 +210,37 @@
 
             if (error) throw error;
 
-            // 3. 小彩蛋與通知判斷
+            let eggMsg = "";
             if (isReimburse || category === "罰款") {
                 let msg = `\n🔔 新紀錄！\n項目：${title}\n金額：$${amount}\n付款人：${payer}\n分類：${category}(${needType})`;
-                
                 if (isReimburse) msg += `\n⚠️ 【這筆是待請款】`;
-                if (category === "罰款") msg += `\n👊 揍你喔！看你下次還敢不敢！`;
-                
+                if (category === "罰款") {
+                    msg += `\n👊 揍你喔！看你下次還敢不敢！`;
+                    eggMsg = " \n\n👊 揍你喔！看你下次還敢不敢！"; // 顯示在 Alert 中
+                }
                 await sendLineNotify(msg);
             }
 
-            // 4. 完成後的重置
-            alert("✅ 新增成功！" + (isReimburse ? "（已通知對方）" : ""));
+            alert("✅ 新增成功！" + (isReimburse ? "（已通知對方）" : "") + eggMsg);
+            
             document.getElementById('amount').value = "";
             document.getElementById('title').value = "";
             document.getElementById('is_reimburse').checked = false;
-            
-            await refresh(); // 更新列表與統計
+            await refresh();
 
         } catch (err) {
-            alert("❌ 糟糕，失敗了：" + err.message);
+            alert("❌ 失敗：" + err.message);
         } finally {
-            // 5. 解鎖按鈕
             btn.disabled = false;
             btn.innerText = "✨ 新增紀錄 ✨";
             btn.style.backgroundColor = "#ff6fa9";
         }
     }
 
-    // 刷新統計數據
     async function refresh() {
         const monthVal = document.getElementById('view-month').value;
+        if (!monthVal) return;
         const [year, month] = monthVal.split('-').map(Number);
-        
         const { data, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
         if (error) return;
         localData = data || [];
@@ -272,7 +260,6 @@
         });
 
         const toTxt = (list) => list.length ? list.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無';
-
         document.getElementById('stats-board').innerHTML = `
             <div class="total-amount">$${Math.round(s.total)}</div>
             <div style="display:flex; justify-content: space-around; font-size:13px; color:#888; margin-bottom:10px;">
@@ -293,19 +280,17 @@
                         <div class="reimburse-list">${toTxt(s.waterList)}</div>
                     </div>
                 </div>
-                <button class="settle-btn" id="settleBtn">💰 結清並反轉身分</button>
+                <button class="settle-btn" id="settleBtn">💰 結清</button>
             </div>
         `;
         document.getElementById('settleBtn').onclick = settleAll;
         renderList();
     }
 
-    // 渲染歷史明細
     function renderList() {
         const pFilter = document.getElementById('filter-payer').value;
         const cFilter = document.getElementById('filter-category').value;
         const [year, month] = document.getElementById('view-month').value.split('-').map(Number);
-
         const filtered = localData.filter(i => {
             const d = new Date(i.created_at);
             const mMatch = d.getFullYear() === year && (d.getMonth()+1) === month;
@@ -314,7 +299,6 @@
             let cMatch = (cFilter === "全部") ? true : (cFilter === "待請款" ? isR : i.category === cFilter);
             return mMatch && pMatch && cMatch;
         });
-
         document.getElementById('record-list').innerHTML = filtered.map(i => `
             <div class="record-item" style="${i.is_settled ? 'opacity: 0.5' : ''}">
                 <div class="item-info">
@@ -330,22 +314,17 @@
             </div>`).join('');
     }
 
-    // 結清功能
     async function settleAll() {
         if (!confirm("確定要結清所有待請款嗎？")) return;
         const { data: targets } = await db.from('expenses').select('*').eq('is_reimburse', true).eq('is_settled', false);
         if (!targets || !targets.length) return alert("沒有待請款可以結清喔！");
-        
         for (const item of targets) {
             const nextPayer = (item.payer.trim() === "小精靈") ? "西瓜" : "小精靈";
-            await db.from('expenses').update({ 
-                payer: nextPayer, is_settled: true, title: `(結清) ${item.title}` 
-            }).eq('id', item.id);
+            await db.from('expenses').update({ payer: nextPayer, is_settled: true, title: `(結清) ${item.title}` }).eq('id', item.id);
         }
         alert("結清完畢！身分已互換。"); refresh();
     }
 
-    // 初始化頁面
     window.onload = () => {
         const d = new Date();
         document.getElementById('view-month').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;

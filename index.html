@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>💕 小精靈 & 西瓜 專業記帳 💕</title>
+    <title>💕 小精靈 & 西瓜 記帳本本 💕</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         /* 保留原本的所有 CSS，新增月份選取器樣式 */
@@ -110,14 +110,14 @@
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
     
     // ⚠️ 請在這裡貼上你申請的 LINE Token
-    const LINE_TOKEN = "你的_LINE_TOKEN_貼在這裡"; 
+    const LINE_TOKEN = "https://script.google.com/macros/s/AKfycbwXM4LqC4bKJTCJIWci9tnfZQswhxVJXGETgLcpqDpOOIW5h1iClAVKJ6yp2vm-bfdt/exec"; 
 
     let client = null, localData = [];
     const getDb = () => { if (!client && window.supabase) client = window.supabase.createClient(SB_URL, SB_KEY); return client; };
 
     // LINE 通知功能
     async function sendLineNotify(msg) {
-        if (LINE_TOKEN === "你的_LINE_TOKEN_貼在這裡") return;
+        if (LINE_TOKEN === "https://script.google.com/macros/s/AKfycbwXM4LqC4bKJTCJIWci9tnfZQswhxVJXGETgLcpqDpOOIW5h1iClAVKJ6yp2vm-bfdt/exec") return;
         try {
             await fetch('https://notify-api.line.me/api/notify', {
                 method: 'POST',

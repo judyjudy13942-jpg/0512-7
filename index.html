@@ -6,25 +6,82 @@
     <title>💕 小精靈 & 西瓜 記帳本本 💕</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: #ffe3ef; padding: 15px; color: #6d2942; margin: 0; }
-        .container { max-width: 450px; margin: auto; }
-        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; }
-        h2, h3 { margin: 0 0 15px 0; color: #df4d8f; font-size: 20px; }
-        label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
-        input, select { width: 100%; height: 45px; padding: 0 12px; margin-top: 5px; border-radius: 12px; border: 1px solid #f3a9c6; box-sizing: border-box; font-size: 16px; }
-        .month-picker-wrap { background: #fff2f8; padding: 10px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #f3a9c6; width: 100%; }
-        .checkbox-container { display: flex; align-items: center; background: #fff2f8; padding: 12px; border-radius: 12px; margin-top: 15px; cursor: pointer; border: 1px solid #f3a9c6; }
-        .checkbox-container input { width: 22px; height: 22px; margin-right: 10px; accent-color: #ff6fa9; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; }
-        .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; margin: 5px 0; }
-        .reimburse-box { background: #fdf2ff; border-radius: 12px; padding: 12px; margin-top: 15px; border: 1px solid #e0c3fc; font-size: 14px; }
-        .reimburse-detail { text-align: left; font-size: 11px; color: #6c5ce7; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.5; }
-        .settle-btn { background: #6c5ce7; font-size: 14px; padding: 8px; width: 100%; border-radius: 8px; color: white; border: none; cursor: pointer; }
-        .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; text-align: left; }
-        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 4px; color: white; font-weight: bold; }
-        .filter-row { display: flex; gap: 8px; margin-bottom: 10px; }
-        .filter-row select { margin-top: 0; flex: 1; height: 40px; font-size: 14px; }
-    </style>
+    /* 核心修正：確保所有元素寬度計算都包含內距 */
+    * { box-sizing: border-box; } 
+
+    body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: #ffe3ef; padding: 15px; color: #6d2942; margin: 0; }
+    .container { max-width: 450px; margin: auto; }
+    .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; }
+    
+    h2, h3 { margin: 0 0 15px 0; color: #df4d8f; font-size: 20px; }
+    label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
+    
+    /* 修正突出問題：width 100% 搭配 border-box */
+    input, select { 
+        width: 100%; 
+        height: 45px; 
+        padding: 0 12px; 
+        margin-top: 5px; 
+        border-radius: 12px; 
+        border: 1px solid #f3a9c6; 
+        font-size: 16px; 
+        outline: none;
+        background-color: white;
+    }
+
+    /* 月份查詢專用樣式修正 */
+    .month-picker-wrap { 
+        background: #fff2f8; 
+        padding: 8px 12px; 
+        border-radius: 15px; 
+        margin-bottom: 15px; 
+        border: 1px solid #f3a9c6; 
+        width: 100%;
+        color: #df4d8f;
+        font-weight: bold;
+    }
+
+    .checkbox-container { 
+        display: flex; 
+        align-items: center; 
+        background: #fff2f8; 
+        padding: 12px; 
+        border-radius: 12px; 
+        margin-top: 15px; 
+        cursor: pointer; 
+        border: 1px solid #f3a9c6; 
+    }
+    .checkbox-container input { 
+        width: 22px; 
+        height: 22px; 
+        margin: 0 10px 0 0; 
+        accent-color: #ff6fa9; 
+    }
+
+    button { 
+        width: 100%; 
+        padding: 15px; 
+        border: none; 
+        border-radius: 15px; 
+        background: #ff6fa9; 
+        color: white; 
+        font-weight: bold; 
+        font-size: 18px; 
+        cursor: pointer; 
+        margin-top: 20px; 
+    }
+    
+    .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; margin: 5px 0; }
+    
+    /* 下方列表過濾器修正 */
+    .filter-row { display: flex; gap: 8px; margin-bottom: 10px; width: 100%; }
+    .filter-row select { margin-top: 0; flex: 1; height: 40px; font-size: 14px; }
+    
+    .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; text-align: left; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 4px; color: white; font-weight: bold; }
+    .reimburse-box { background: #fdf2ff; border-radius: 12px; padding: 12px; margin-top: 15px; border: 1px solid #e0c3fc; }
+    .settle-btn { background: #6c5ce7; font-size: 14px; padding: 10px; width: 100%; border-radius: 10px; color: white; border: none; cursor: pointer; }
+</style>
 </head>
 <body>
 

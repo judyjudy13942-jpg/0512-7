@@ -6,40 +6,60 @@
     <title>💕 小精靈 & 西瓜 記帳本本 💕</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        /* 核心修正：強制內縮且不允許橫向滾動 */
-        * { box-sizing: border-box !important; -webkit-tap-highlight-color: transparent; }
+        /* 1. 徹底解決突出：強制所有元素寬度計算包含邊框 */
+        * { box-sizing: border-box !important; }
         
-        html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; }
+        html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; background: #ffe3ef; }
 
-        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: #ffe3ef; padding: 15px; color: #6d2942; }
+        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; padding: 15px; color: #6d2942; }
         .container { max-width: 450px; margin: auto; width: 100%; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; width: 100%; }
         
         h2, h3 { margin: 0 0 15px 0; color: #df4d8f; font-size: 20px; }
         label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
         
-        /* 修正日期、下拉選單：確保垂直居中且不突出 */
+        /* 2. 修正日期與下拉選單：使用 calc 確保寬度絕對正確 */
         input, select { 
-            width: 100% !important; 
+            width: 100% !important;
+            max-width: 100%;
             height: 48px; 
-            padding: 0 12px; 
+            padding: 10px 12px !important; 
             margin-top: 5px; 
             border-radius: 12px; 
             border: 1px solid #f3a9c6; 
             font-size: 16px; 
-            outline: none;
             background-color: white;
-            display: flex;
-            align-items: center; /* 文字垂直居中 */
-            line-height: 48px;  /* 輔助文字垂直居中 */
+            appearance: none; /* 去除手機預設樣式 */
+            -webkit-appearance: none;
         }
 
-        .month-picker-wrap { 
-            background: #fff2f8; 
-            border: 1px solid #f3a9c6; 
-            color: #df4d8f;
-            font-weight: bold;
-            text-align: center;
+        /* 3. 修正待請款 UI 跑版：使用 Flex 佈局確保不擠壓 */
+        .reimburse-box { 
+            background: #fdf2ff; 
+            border-radius: 12px; 
+            padding: 15px; 
+            margin-top: 15px; 
+            border: 1px solid #e0c3fc; 
+        }
+        .reimburse-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .reimburse-col {
+            flex: 1;
+            text-align: left;
+            min-width: 0; /* 防止內容撐開 */
+        }
+        .reimburse-detail { 
+            font-size: 11px; 
+            color: #6c5ce7; 
+            margin-top: 5px; 
+            border-top: 1px solid rgba(108, 92, 231, 0.1); 
+            padding-top: 5px; 
+            line-height: 1.4;
+            word-break: break-all;
         }
 
         .checkbox-container { 
@@ -49,24 +69,19 @@
             padding: 12px; 
             border-radius: 12px; 
             margin-top: 15px; 
-            cursor: pointer; 
             border: 1px solid #f3a9c6; 
         }
         .checkbox-container input { width: 22px; height: 22px; margin: 0 10px 0 0; accent-color: #ff6fa9; flex-shrink: 0; }
 
         button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; }
-        button:active { transform: scale(0.98); opacity: 0.9; }
+        .settle-btn { background: #6c5ce7; font-size: 14px; padding: 12px; border-radius: 10px; margin-top: 10px; }
         
         .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; margin: 5px 0; }
-        .reimburse-box { background: #fdf2ff; border-radius: 12px; padding: 12px; margin-top: 15px; border: 1px solid #e0c3fc; }
-        .reimburse-detail { text-align: left; font-size: 11px; color: #6c5ce7; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.5; }
-        .settle-btn { background: #6c5ce7; font-size: 14px; padding: 10px; width: 100%; border-radius: 10px; color: white; border: none; cursor: pointer; margin-top: 10px; }
-
         .filter-row { display: flex; gap: 8px; margin-bottom: 10px; width: 100%; }
-        .filter-row select { margin-top: 0; flex: 1; height: 40px; font-size: 14px; line-height: 40px; }
+        .filter-row select { height: 40px; font-size: 14px; margin-top: 0; }
         
-        .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; text-align: left; }
-        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 4px; color: white; font-weight: bold; }
+        .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -75,7 +90,7 @@
     <div class="card">
         <h3>📅 歷史查詢與統計</h3>
         <input type="month" id="view-month" class="month-picker-wrap">
-        <div id="stats-board"><p>數據加載中...</p></div>
+        <div id="stats-board">數據讀取中...</div>
     </div>
 
     <div class="card">
@@ -85,7 +100,7 @@
         <label>誰付錢</label>
         <select id="payer"><option value="小精靈">小精靈</option><option value="西瓜">西瓜</option></select>
         <label>項目名稱</label>
-        <input id="title" type="text" placeholder="未命名項目">
+        <input id="title" type="text" placeholder="去哪裡玩？吃什麼？">
         <label>金額</label>
         <input id="amount" type="number" inputmode="decimal">
         <label>分類</label>
@@ -95,11 +110,12 @@
             <option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
             <option value="醫療">🏥 醫療</option><option value="儲值">💵 儲值</option>
             <option value="罰款">🚔 罰款</option><option value="狗勾">🐶 狗勾</option>
-            <option value="爸爸贊助">🎁 爸爸贊助</option><option value="其他">✨ 其他</option>
+            <option value="爸爸贊助">🎁 爸爸贊助</option>
+            <option value="其他">✨ 其他</option>
         </select>
         <label class="checkbox-container">
             <input type="checkbox" id="is_reimburse">
-            <span>🙋 待請款</span>
+            <span>🙋 這筆是「待請款」</span>
         </label>
         <button id="addBtn">確認新增並發送通知</button>
     </div>
@@ -107,21 +123,15 @@
     <div class="card">
         <h3>📜 歷史明細</h3>
         <div class="filter-row">
-            <select id="filter-payer">
-                <option value="全部">👤 全部人</option>
-                <option value="小精靈">🧚 小精靈</option>
-                <option value="西瓜">🍉 西瓜</option>
-            </select>
-            <select id="filter-category">
-                <option value="全部">📂 全部類別</option>
-                <option value="待請款">💸 待請款項</option>
-                <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option>
+            <select id="filter-payer"><option value="全部">👤 全部</option><option value="小精靈">🧚 小精靈</option><option value="西瓜">🍉 西瓜</option></select>
+            <select id="filter-category"><option value="全部">📂 全部</option><option value="待請款">💸 待請款</option></select>
+            <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option>
             <option value="住宿">🏨 住宿</option><option value="交通">🚗 交通</option>
             <option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
             <option value="醫療">🏥 醫療</option><option value="儲值">💵 儲值</option>
             <option value="罰款">🚔 罰款</option><option value="狗勾">🐶 狗勾</option>
-            <option value="爸爸贊助">🎁 爸爸贊助</option><option value="其他">✨ 其他</option>
-            </select>
+            <option value="爸爸贊助">🎁 爸爸贊助</option>
+            <option value="其他">✨ 其他</option>
         </div>
         <div id="record-list"></div>
     </div>
@@ -130,69 +140,57 @@
 <script>
     const SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwXM4LqC4bKJTCJIWci9tnfZQswhxVJXGETgLcpqDpOOIW5h1iClAVKJ6yp2vm-bfdt/exec"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwXM4LqC4bKJTCJIWci9tnfZQswhxVJXGETgLcpqDpOOIW5h1iClAVKJ6yp2vm-bfdt/exec";
 
-    let client = null, localData = [];
-    const getDb = () => { 
-        if (!client && window.supabase) client = window.supabase.createClient(SB_URL, SB_KEY); 
-        return client; 
-    };
+    let client = (window.supabase) ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+    let localData = [];
 
     async function sendLineNotify(msg) {
         if (!GAS_URL) return;
         try {
-            await fetch(GAS_URL, {
-                method: 'POST',
-                mode: 'no-cors', // 避免跨網域問題
-                body: JSON.stringify({ message: msg })
-            });
-        } catch (e) { console.error("通知失敗", e); }
+            fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ message: msg }) });
+        } catch (e) { console.error(e); }
     }
 
     async function refresh() {
-        const db = getDb();
-        const monthInput = document.getElementById('view-month').value;
-        if (!monthInput) return;
-        const [year, month] = monthInput.split('-').map(Number);
-
-        const { data, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
+        if (!client) return;
+        const monthVal = document.getElementById('view-month').value;
+        const [year, month] = monthVal.split('-').map(Number);
+        
+        const { data, error } = await client.from('expenses').select('*').order('created_at', { ascending: false });
         if (error) return;
         localData = data || [];
 
-        let stats = { elf: 0, water: 0, total: 0, elf_r: 0, water_r: 0, elfList: [], waterList: [] };
-        
+        let s = { elf: 0, water: 0, total: 0, elf_r: 0, water_r: 0, elfList: [], waterList: [] };
         localData.forEach(i => {
-            const date = new Date(i.created_at);
+            const d = new Date(i.created_at);
             const amt = Number(i.amount);
-            const isTargetMonth = (date.getFullYear() === year && (date.getMonth() + 1) === month);
-            
-            if (isTargetMonth) {
-                if (i.payer.trim() === "小精靈") stats.elf += amt;
-                else stats.water += amt;
-                stats.total += amt;
+            if (d.getFullYear() === year && (d.getMonth()+1) === month) {
+                if (i.payer.trim()==="小精靈") s.elf += amt; else s.water += amt;
+                s.total += amt;
             }
             if ((i.is_reimburse == true || i.is_reimburse == "true") && !i.is_settled) {
-                if (i.payer.trim() === "小精靈") { stats.elf_r += amt; stats.elfList.push(i); }
-                else { stats.water_r += amt; stats.waterList.push(i); }
+                if (i.payer.trim()==="小精靈") { s.elf_r += amt; s.elfList.push(i); }
+                else { s.water_r += amt; s.waterList.push(i); }
             }
         });
 
-        const listToText = (l) => l.length ? l.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無細項';
+        const toTxt = (l) => l.length ? l.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無';
 
         document.getElementById('stats-board').innerHTML = `
             <div style="font-size:14px; color:#a35d78;">${year}年${month}月 總支出</div>
-            <div class="total-amount">$${Math.round(stats.total)}</div>
-            <div style="display:flex; justify-content: space-around; font-size:13px; color:#888; margin-bottom:15px;">
-                <span>🧚 小精靈: $${Math.round(stats.elf)}</span>
-                <span>🍉 西瓜: $${Math.round(stats.water)}</span>
+            <div class="total-amount">$${Math.round(s.total)}</div>
+            <div style="display:flex; justify-content: space-around; font-size:13px; color:#888; margin-bottom:10px;">
+                <span>🧚 小精靈: $${Math.round(s.elf)}</span>
+                <span>🍉 西瓜: $${Math.round(s.water)}</span>
             </div>
             <div class="reimburse-box">
-                <div style="display:flex; justify-content: space-around; text-align:left;">
-                    <div style="width:45%"><b style="color:#6c5ce7; font-size:11px;">🧚 待請款</b><br><span style="font-size:18px; font-weight:bold;">$${Math.round(stats.elf_r)}</span><div class="reimburse-detail">${listToText(stats.elfList)}</div></div>
+                <div class="reimburse-row">
+                    <div class="reimburse-col"><b style="color:#6c5ce7; font-size:11px;">🧚 待請款</b><br><span style="font-size:18px; font-weight:bold;">$${Math.round(s.elf_r)}</span><div class="reimburse-detail">${toTxt(s.elfList)}</div></div>
                     <div style="width:1px; background:#e0c3fc;"></div>
-                    <div style="width:45%"><b style="color:#6c5ce7; font-size:11px;">🍉 待請款</b><br><span style="font-size:18px; font-weight:bold;">$${Math.round(stats.water_r)}</span><div class="reimburse-detail">${listToText(stats.waterList)}</div></div>
+                    <div class="reimburse-col"><b style="color:#6c5ce7; font-size:11px;">🍉 待請款</b><br><span style="font-size:18px; font-weight:bold;">$${Math.round(s.water_r)}</span><div class="reimburse-detail">${toTxt(s.waterList)}</div></div>
                 </div>
-                <button class="settle-btn" id="settleBtn">💰 結清</button>
+                <button class="settle-btn" id="settleBtn">💰 結清並身分反轉</button>
             </div>
         `;
         document.getElementById('settleBtn').onclick = settleAll;
@@ -200,17 +198,16 @@
     }
 
     function renderList() {
-        const filterPayer = document.getElementById('filter-payer').value;
-        const filterCat = document.getElementById('filter-category').value;
-        const monthInput = document.getElementById('view-month').value;
-        const [year, month] = monthInput.split('-').map(Number);
+        const pFilter = document.getElementById('filter-payer').value;
+        const cFilter = document.getElementById('filter-category').value;
+        const [year, month] = document.getElementById('view-month').value.split('-').map(Number);
 
         const filtered = localData.filter(i => {
             const d = new Date(i.created_at);
-            const mMatch = d.getFullYear() === year && (d.getMonth() + 1) === month;
-            const pMatch = (filterPayer === "全部" || i.payer.trim() === filterPayer);
+            const mMatch = d.getFullYear() === year && (d.getMonth()+1) === month;
+            const pMatch = (pFilter === "全部" || i.payer.trim() === pFilter);
             const isR = (i.is_reimburse == true || i.is_reimburse == "true");
-            let cMatch = (filterCat === "全部") ? true : (filterCat === "待請款" ? isR : i.category === filterCat);
+            const cMatch = (cFilter === "全部") ? true : (cFilter === "待請款" ? isR : false);
             return mMatch && pMatch && cMatch;
         });
 
@@ -218,61 +215,58 @@
             <div class="record-item" style="${i.is_settled ? 'opacity: 0.5' : ''}">
                 <div>
                     <span class="tag" style="background:${i.payer.trim()==='小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
-                    <b>${i.title || '未命名'}</b>
-                    <small style="display:block; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</small>
+                    <b style="font-size:15px;">${i.title}</b>
+                    <div style="font-size:11px; color:#999; margin-top:3px;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</div>
                 </div>
                 <div style="text-align:right">
                     <div style="font-weight:bold; color:#cb457e">$${i.amount}</div>
-                    ${(i.is_reimburse == true || i.is_reimburse == "true") ? `<small class="tag" style="background:#6c5ce7; color:white; font-size:10px; padding:2px 5px; border-radius:5px;">${i.is_settled?'已結':'待請'}</small>` : ''}
+                    ${(i.is_reimburse == true || i.is_reimburse == "true") ? `<span style="font-size:10px; color:#6c5ce7; border:1px solid #6c5ce7; padding:1px 4px; border-radius:4px;">${i.is_settled?'已結':'待請'}</span>` : ''}
                 </div>
             </div>`).join('');
     }
 
     async function settleAll() {
-        if (!confirm("確定要將所有待請款結清嗎？")) return;
-        const db = getDb();
-        const { data: targets } = await db.from('expenses').select('*').eq('is_reimburse', true).eq('is_settled', false);
-        if (!targets || !targets.length) return alert("沒有待請款喔！");
+        if (!confirm("要結清所有待請款嗎？")) return;
+        const { data: targets } = await client.from('expenses').select('*').eq('is_reimburse', true).eq('is_settled', false);
+        if (!targets || !targets.length) return alert("沒東西結清喔");
         for (const item of targets) {
-            const newPayer = (item.payer.trim() === "小精靈") ? "西瓜" : "小精靈";
-            await db.from('expenses').update({ payer: newPayer, is_settled: true, title: `(結清) ${item.title}` }).eq('id', item.id);
+            const nextPayer = (item.payer.trim() === "小精靈") ? "西瓜" : "小精靈";
+            await client.from('expenses').update({ payer: nextPayer, is_settled: true, title: `(結清) ${item.title}` }).eq('id', item.id);
         }
-        alert("✨ 結清成功！"); 
-        refresh();
+        alert("結清成功！"); refresh();
     }
 
-    window.onload = async () => {
-        const now = new Date();
-        document.getElementById('view-month').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        document.getElementById('custom-date').value = now.toISOString().split('T')[0];
+    window.onload = () => {
+        const d = new Date();
+        document.getElementById('view-month').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        document.getElementById('custom-date').value = d.toISOString().split('T')[0];
         
         document.getElementById('addBtn').onclick = async () => {
-            const db = getDb();
             const p = document.getElementById('payer').value;
             const t = document.getElementById('title').value || "未命名";
             const a = document.getElementById('amount').value;
             const c = document.getElementById('category').value;
             const r = document.getElementById('is_reimburse').checked;
+            const dt = document.getElementById('custom-date').value;
             
-            if (!a) return alert("金額要填喔！");
+            if (!a) return alert("請輸入金額");
 
-            const { error } = await db.from('expenses').insert([{
+            const { error } = await client.from('expenses').insert([{
                 title: t, amount: Number(a), payer: p, category: c, is_reimburse: r, is_settled: false,
-                created_at: new Date(document.getElementById('custom-date').value + 'T' + new Date().toLocaleTimeString('it-IT')).toISOString()
+                created_at: new Date(dt + 'T' + new Date().toTimeString().split(' ')[0]).toISOString()
             }]);
 
             if (!error) {
                 if (r || c === "罰款") {
-                    let msg = `\n🔔 通知！\n項目：${t}\n金額：$${a}\n付款人：${p}`;
-                    if (r) msg += `\n⚠️ 【待請款】`;
-                    if (c === "罰款") msg += `\n👊 揍你喔！`;
-                    sendLineNotify(msg);
+                    sendLineNotify(`\n🔔 通知！\n項目：${t}\n金額：$${a}\n付款人：${p}${r?'\n⚠️ 【待請款】':''}${c==='罰款'?'\n👊 欠揍喔！':''}`);
                 }
                 document.getElementById('amount').value = "";
+                document.getElementById('title').value = "";
                 document.getElementById('is_reimburse').checked = false;
                 refresh();
             } else {
-                alert("儲存失敗：" + error.message);
+                alert("新增失敗，請檢查網路！");
+                console.log(error);
             }
         };
 

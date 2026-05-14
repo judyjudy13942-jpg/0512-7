@@ -145,12 +145,20 @@
     let localData = [];
 
     async function sendLineNotify(msg) {
-        if (!GAS_URL) return;
-        try {
-            fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ message: msg }) });
-        } catch (e) { console.error(e); }
+    if (!GAS_URL) return;
+    try {
+        // 使用 URLSearchParams 確保資料格式正確傳遞給 GAS
+        await fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: JSON.stringify({ message: msg })
+        });
+        console.log("通知請求已發出");
+    } catch (e) { 
+        console.error("通知發送失敗:", e); 
     }
-
+}
     async function refresh() {
         const monthVal = document.getElementById('view-month').value;
         const [year, month] = monthVal.split('-').map(Number);
@@ -248,37 +256,47 @@
     }
 
     document.getElementById('addBtn').onclick = async () => {
-        const p = document.getElementById('payer').value;
-        const t = document.getElementById('title').value || "未命名";
-        const a = document.getElementById('amount').value;
-        const c = document.getElementById('category').value;
-        const nt = document.getElementById('need_type').value;
-        const r = document.getElementById('is_reimburse').checked;
-        const dt = document.getElementById('custom-date').value;
+    const p = document.getElementById('payer').value;
+    const t = document.getElementById('title').value || "未命名";
+    const a = document.getElementById('amount').value;
+    const c = document.getElementById('category').value;
+    const nt = document.getElementById('need_type').value;
+    const r = document.getElementById('is_reimburse').checked;
+    const dt = document.getElementById('custom-date').value;
+    
+    if (!a) return alert("請輸入金額！");
+
+    const finalDate = `${dt}T${new Date().toTimeString().split(' ')[0]}.000Z`;
+
+    // 先新增資料到 Supabase
+    const { error } = await db.from('expenses').insert([{
+        title: t, amount: Number(a), payer: p, category: c, need_type: nt, is_reimburse: r, is_settled: false, created_at: finalDate
+    }]);
+
+    if (!error) {
+        // 準備通知內容
+        let msg = `\n🔔 新紀錄！\n項目：${t}\n金額：$${a}\n付款人：${p}\n分類：${c}(${nt})`;
         
-        if (!a) return alert("請輸入金額！");
-
-        const finalDate = `${dt}T${new Date().toTimeString().split(' ')[0]}.000Z`;
-
-        const { error } = await db.from('expenses').insert([{
-            title: t, amount: Number(a), payer: p, category: c, need_type: nt, is_reimburse: r, is_settled: false, created_at: finalDate
-        }]);
-
-        if (!error) {
-            let msg = `\n🔔 新紀錄！\n項目：${t}\n金額：$${a}\n付款人：${p}\n分類：${c}(${nt})`;
-            if (r) msg += `\n⚠️ 【待請款】`;
+        // 如果是待請款或是罰款，一定要發通知
+        if (r || c === "罰款") {
+            if (r) msg += `\n⚠️ 【這筆是待請款】`;
             if (c === "罰款") msg += `\n👊 揍你喔！`;
-            sendLineNotify(msg);
-
-            document.getElementById('amount').value = "";
-            document.getElementById('title').value = "";
-            document.getElementById('is_reimburse').checked = false;
-            alert("✅ 新增成功！"); refresh();
-        } else {
-            alert("❌ 失敗：" + error.message);
+            
+            // 使用 await 確保發送動作完成
+            await sendLineNotify(msg);
         }
-    };
 
+        // 清空欄位並重整
+        document.getElementById('amount').value = "";
+        document.getElementById('title').value = "";
+        document.getElementById('is_reimburse').checked = false;
+        
+        alert("✅ 新增成功！" + (r ? "（已發送通知）" : ""));
+        refresh();
+    } else {
+        alert("❌ 失敗：" + error.message);
+    }
+};
     window.onload = () => {
         const d = new Date();
         document.getElementById('view-month').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;

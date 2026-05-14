@@ -28,7 +28,6 @@
             outline: none;
         }
 
-        /* 雙欄位排版 (需要/想要) */
         .row { display: flex; gap: 10px; }
         .row > div { flex: 1; }
 
@@ -63,7 +62,6 @@
         
         .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; }
         .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; color: white; font-weight: bold; }
-        .sub-tag { font-size: 10px; color: #999; margin-left: 5px; }
     </style>
 </head>
 <body>
@@ -93,23 +91,18 @@
             <div>
                 <label>分類</label>
                 <select id="category">
-                    <option value="餐飲">🍔 餐飲</option>
-                <option value="餐費預付">💰 餐費預付</option>
-                <option value="住宿">🏨 住宿</option>
-                <option value="交通">🚗 交通</option>
-                <option value="購物">🛍️ 購物</option>
-                <option value="電話及會員">📱 電話及會員</option>
-                <option value="醫療">🏥 醫療</option>
-                <option value="儲值">💵 儲值</option>
-                <option value="罰款">🚔 罰款</option>
-                <option value="狗勾">🐶 狗勾</option>
-                <option value="爸爸贊助">🎁 爸爸贊助</option>
-                <option value="其他">✨ 其他</option>
+                    <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option>
+                    <option value="住宿">🏨 住宿</option><option value="交通">🚗 交通</option>
+                    <option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
+                    <option value="醫療">🏥 醫療</option><option value="儲值">💵 儲值</option>
+                    <option value="罰款">🚔 罰款</option><option value="狗勾">🐶 狗勾</option>
+                    <option value="狗勾">🐶 狗勾</option>
+                    <option value="其他">✨ 其他</option>
                 </select>
             </div>
             <div>
                 <label>類型</label>
-                <select id="demand_type">
+                <select id="need_type">
                     <option value="需要">✅ 需要</option>
                     <option value="想要">🎁 想要</option>
                 </select>
@@ -129,18 +122,12 @@
         <div class="filter-row">
             <select id="filter-payer"><option value="全部">👤 全部</option><option value="小精靈">🧚 小精靈</option><option value="西瓜">🍉 西瓜</option></select>
             <select id="filter-category"><option value="全部">📂 全部</option><option value="待請款">💸 待請款</option></select>
-            <option value="餐飲">🍔 餐飲</option>
-                <option value="餐費預付">💰 餐費預付</option>
-                <option value="住宿">🏨 住宿</option>
-                <option value="交通">🚗 交通</option>
-                <option value="購物">🛍️ 購物</option>
-                <option value="電話及會員">📱 電話及會員</option>
-                <option value="醫療">🏥 醫療</option>
-                <option value="儲值">💵 儲值</option>
-                <option value="罰款">🚔 罰款</option>
-                <option value="狗勾">🐶 狗勾</option>
-                <option value="爸爸贊助">🎁 爸爸贊助</option>
-                <option value="其他">✨ 其他</option>
+            <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option>
+            <option value="住宿">🏨 住宿</option><option value="交通">🚗 交通</option>
+            <option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
+            <option value="醫療">🏥 醫療</option><option value="儲值">💵 儲值</option>
+            <option value="罰款">🚔 罰款</option><option value="狗勾">🐶 狗勾</option>
+            <option value="狗勾">🐶 狗勾</option><option value="其他">✨ 其他</option>
         </div>
         <div id="record-list"></div>
     </div>
@@ -224,7 +211,7 @@
                     <span class="tag" style="background:${i.payer.trim()==='小精靈'?'#ff6fa9':'#4da6ff'}">${i.payer}</span>
                     <b style="font-size:15px;">${i.title}</b>
                     <div style="font-size:11px; color:#999; margin-top:3px;">
-                        ${i.category} | ${i.demand_type || ''} | ${new Date(i.created_at).toLocaleDateString()}
+                        ${i.category} | ${i.need_type || ''} | ${new Date(i.created_at).toLocaleDateString()}
                     </div>
                 </div>
                 <div style="text-align:right;">
@@ -255,7 +242,7 @@
             const t = document.getElementById('title').value || "未命名";
             const a = document.getElementById('amount').value;
             const c = document.getElementById('category').value;
-            const dt_type = document.getElementById('demand_type').value;
+            const nt = document.getElementById('need_type').value;
             const r = document.getElementById('is_reimburse').checked;
             const dt = document.getElementById('custom-date').value;
             
@@ -264,16 +251,16 @@
             const nowTime = new Date().toTimeString().split(' ')[0];
             const finalDate = `${dt}T${nowTime}.000Z`;
 
+            // 修改為對應資料庫欄位名稱: need_type
             const { error } = await db.from('expenses').insert([{
-                title: t, amount: Number(a), payer: p, category: c, demand_type: dt_type, is_reimburse: r, is_settled: false,
+                title: t, amount: Number(a), payer: p, category: c, need_type: nt, is_reimburse: r, is_settled: false,
                 created_at: finalDate
             }]);
 
             if (!error) {
-                // 彩蛋判斷：如果是罰款就揍你
-                let notifyMsg = `\n🔔 新紀錄通知！\n項目：${t}\n金額：$${a}\n付款人：${p}\n分類：${c}\n類型：${dt_type}`;
+                let notifyMsg = `\n🔔 新紀錄通知！\n項目：${t}\n金額：$${a}\n付款人：${p}\n分類：${c}\n類型：${nt}`;
                 if (r) notifyMsg += `\n⚠️ 【這筆是待請款】`;
-                if (c === "罰款") notifyMsg += `\n👊 敢亂花錢？揍你喔！`;
+                if (c === "罰款") notifyMsg += `\n👊 揍你喔！`;
 
                 sendLineNotify(notifyMsg);
 

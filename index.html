@@ -6,88 +6,71 @@
     <title>💕 小精靈 & 西瓜 記帳本本 💕</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-    /* 核心修正：確保所有元素寬度計算都包含內距 */
-    * { box-sizing: border-box; } 
+        /* 1. 解決突出問題的核心：強迫所有元素內縮 */
+        * { box-sizing: border-box !important; } 
 
-    body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: #ffe3ef; padding: 15px; color: #6d2942; margin: 0; }
-    .container { max-width: 450px; margin: auto; }
-    .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; }
-    
-    h2, h3 { margin: 0 0 15px 0; color: #df4d8f; font-size: 20px; }
-    label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
-    
-    /* 修正突出問題：width 100% 搭配 border-box */
-    input, select { 
-        width: 100%; 
-        height: 45px; 
-        padding: 0 12px; 
-        margin-top: 5px; 
-        border-radius: 12px; 
-        border: 1px solid #f3a9c6; 
-        font-size: 16px; 
-        outline: none;
-        background-color: white;
-    }
+        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: #ffe3ef; padding: 15px; color: #6d2942; margin: 0; }
+        .container { max-width: 450px; margin: auto; width: 100%; }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; width: 100%; }
+        
+        h2, h3 { margin: 0 0 15px 0; color: #df4d8f; font-size: 20px; }
+        label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
+        
+        /* 修正輸入框寬度 */
+        input, select { 
+            width: 100%; 
+            height: 45px; 
+            padding: 0 12px; 
+            margin-top: 5px; 
+            border-radius: 12px; 
+            border: 1px solid #f3a9c6; 
+            font-size: 16px; 
+            outline: none;
+            background-color: white;
+            display: block;
+        }
 
-    /* 月份查詢專用樣式修正 */
-    .month-picker-wrap { 
-        background: #fff2f8; 
-        padding: 8px 12px; 
-        border-radius: 15px; 
-        margin-bottom: 15px; 
-        border: 1px solid #f3a9c6; 
-        width: 100%;
-        color: #df4d8f;
-        font-weight: bold;
-    }
+        .month-picker-wrap { 
+            background: #fff2f8; 
+            padding: 10px; 
+            border-radius: 15px; 
+            margin-bottom: 15px; 
+            border: 1px solid #f3a9c6; 
+            color: #df4d8f;
+            font-weight: bold;
+        }
 
-    .checkbox-container { 
-        display: flex; 
-        align-items: center; 
-        background: #fff2f8; 
-        padding: 12px; 
-        border-radius: 12px; 
-        margin-top: 15px; 
-        cursor: pointer; 
-        border: 1px solid #f3a9c6; 
-    }
-    .checkbox-container input { 
-        width: 22px; 
-        height: 22px; 
-        margin: 0 10px 0 0; 
-        accent-color: #ff6fa9; 
-    }
+        .checkbox-container { 
+            display: flex; 
+            align-items: center; 
+            background: #fff2f8; 
+            padding: 12px; 
+            border-radius: 12px; 
+            margin-top: 15px; 
+            cursor: pointer; 
+            border: 1px solid #f3a9c6; 
+        }
+        .checkbox-container input { width: 22px; height: 22px; margin: 0 10px 0 0; accent-color: #ff6fa9; flex-shrink: 0; }
 
-    button { 
-        width: 100%; 
-        padding: 15px; 
-        border: none; 
-        border-radius: 15px; 
-        background: #ff6fa9; 
-        color: white; 
-        font-weight: bold; 
-        font-size: 18px; 
-        cursor: pointer; 
-        margin-top: 20px; 
-    }
-    
-    .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; margin: 5px 0; }
-    
-    /* 下方列表過濾器修正 */
-    .filter-row { display: flex; gap: 8px; margin-bottom: 10px; width: 100%; }
-    .filter-row select { margin-top: 0; flex: 1; height: 40px; font-size: 14px; }
-    
-    .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; text-align: left; }
-    .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 4px; color: white; font-weight: bold; }
-    .reimburse-box { background: #fdf2ff; border-radius: 12px; padding: 12px; margin-top: 15px; border: 1px solid #e0c3fc; }
-    .settle-btn { background: #6c5ce7; font-size: 14px; padding: 10px; width: 100%; border-radius: 10px; color: white; border: none; cursor: pointer; }
-</style>
+        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; }
+        button:active { background: #df4d8f; transform: scale(0.98); }
+        
+        .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; margin: 5px 0; }
+        .reimburse-box { background: #fdf2ff; border-radius: 12px; padding: 12px; margin-top: 15px; border: 1px solid #e0c3fc; }
+        .reimburse-detail { text-align: left; font-size: 11px; color: #6c5ce7; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.5; }
+        .settle-btn { background: #6c5ce7; font-size: 14px; padding: 10px; width: 100%; border-radius: 10px; color: white; border: none; cursor: pointer; margin-top: 10px; }
+
+        .filter-row { display: flex; gap: 8px; margin-bottom: 10px; width: 100%; }
+        .filter-row select { margin-top: 0; flex: 1; height: 40px; font-size: 14px; }
+        .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; text-align: left; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-right: 4px; color: white; font-weight: bold; }
+    </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <h3>📅 收支統計</h3>
+        <h3>📅 歷史查詢與統計</h3>
         <input type="month" id="view-month" class="month-picker-wrap">
         <div id="stats-board"><p>數據加載中...</p></div>
     </div>
@@ -113,9 +96,9 @@
         </select>
         <label class="checkbox-container">
             <input type="checkbox" id="is_reimburse">
-            <span>🙋 這是「待請款」</span>
+            <span>待請款</span>
         </label>
-        <button id="addBtn">確認新增並發送通知</button>
+        <button id="addBtn">確認新增</button>
     </div>
 
     <div class="card">
@@ -138,30 +121,27 @@
     const SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
     
-    // ⚠️ 確保你的 HTML 代碼中這行是這樣寫的：
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwXM4LqC4bKJTCJIWci9tnfZQswhxVJXGETgLcpqDpOOIW5h1iClAVKJ6yp2vm-bfdt/exec";
+    // 你的 GAS 網址
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwXM4LqC4bKJTCJIWci9tnfZQswhxVJXGETgLcpqDpOOIW5h1iClAVKJ6yp2vm-bfdt/exec"; 
 
     let client = null, localData = [];
     const getDb = () => { if (!client && window.supabase) client = window.supabase.createClient(SB_URL, SB_KEY); return client; };
 
-    // 這是正確的發送函式邏輯（配合你的 GAS 網址）
-async function sendLineNotify(msg) {
-    if (!GAS_URL || GAS_URL.includes("你的")) return;
-    try {
-        await fetch(GAS_URL, {
-            method: 'POST',
-            // 💡 這裡很重要：要把訊息包成 JSON 丟給 GAS
-            body: JSON.stringify({ message: msg })
-        });
-    } catch (e) { 
-        console.error("通知失敗", e); 
+    async function sendLineNotify(msg) {
+        if (!GAS_URL) return;
+        try {
+            await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ message: msg })
+            });
+        } catch (e) { console.error("通知失敗", e); }
     }
-}
 
     async function refresh() {
         const db = getDb();
-        const viewMonthStr = document.getElementById('view-month').value;
-        const [year, month] = viewMonthStr.split('-').map(Number);
+        const monthInput = document.getElementById('view-month').value;
+        if (!monthInput) return;
+        const [year, month] = monthInput.split('-').map(Number);
 
         const { data, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
         if (error) return;
@@ -200,7 +180,7 @@ async function sendLineNotify(msg) {
                     <div style="width:1px; background:#e0c3fc;"></div>
                     <div style="width:45%"><b style="color:#6c5ce7; font-size:11px;">🍉 待請款</b><br><span style="font-size:18px; font-weight:bold;">$${Math.round(stats.water_r)}</span><div class="reimburse-detail">${listToText(stats.waterList)}</div></div>
                 </div>
-                <button class="settle-btn" id="settleBtn" style="margin-top:10px;">💰 結清並身分反轉</button>
+                <button class="settle-btn" id="settleBtn">💰 結清</button>
             </div>
         `;
         document.getElementById('settleBtn').onclick = settleAll;
@@ -210,7 +190,8 @@ async function sendLineNotify(msg) {
     function renderList() {
         const filterPayer = document.getElementById('filter-payer').value;
         const filterCat = document.getElementById('filter-category').value;
-        const [year, month] = document.getElementById('view-month').value.split('-').map(Number);
+        const monthInput = document.getElementById('view-month').value;
+        const [year, month] = monthInput.split('-').map(Number);
 
         const filtered = localData.filter(i => {
             const d = new Date(i.created_at);
@@ -276,6 +257,8 @@ async function sendLineNotify(msg) {
                 document.getElementById('amount').value = "";
                 document.getElementById('is_reimburse').checked = false;
                 refresh();
+            } else {
+                alert("儲存失敗：" + error.message);
             }
         };
         document.getElementById('view-month').onchange = refresh;

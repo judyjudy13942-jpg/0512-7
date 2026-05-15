@@ -269,17 +269,28 @@
         } catch (e) {
             alert("結清失敗");
         }
-    }
+    } // 這裡檢查是否有成對
 
     window.onload = () => {
         const d = new Date();
-        document.getElementById('view-month').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        document.getElementById('custom-date').value = d.toISOString().split('T')[0];
-        document.getElementById('view-month').onchange = refresh;
-        document.getElementById('filter-payer').onchange = renderList;
-        document.getElementById('filter-category').onchange = renderList;
+        const monthInput = document.getElementById('view-month');
+        const dateInput = document.getElementById('custom-date');
+        
+        if (monthInput) {
+            monthInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            monthInput.onchange = refresh;
+        }
+        if (dateInput) {
+            dateInput.value = d.toISOString().split('T')[0];
+        }
+        
+        const filterP = document.getElementById('filter-payer');
+        const filterC = document.getElementById('filter-category');
+        if (filterP) filterP.onchange = renderList;
+        if (filterC) filterC.onchange = renderList;
+        
         refresh();
-    };
+    }; // 這裡確保是 }; 結尾
 </script>
 </body>
 </html>

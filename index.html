@@ -7,43 +7,66 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
+        /* 愛心背景動畫 */
+        @keyframes hearts {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+        .heart {
+            position: fixed; color: #ffb3d1; font-size: 20px;
+            z-index: -1; user-select: none; pointer-events: none;
+            animation: hearts 10s linear infinite; bottom: -10%;
+        }
+
         * { box-sizing: border-box !important; -webkit-tap-highlight-color: transparent; }
         html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; background: #ffe3ef; }
-        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; padding: 15px; color: #6d2942; line-height: 1.4; }
-        .container { max-width: 450px; margin: auto; width: 100%; }
-        .card { background: white; border-radius: 20px; padding: 18px; margin-bottom: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; padding: 10px; color: #6d2942; line-height: 1.4; position: relative; }
+        
+        .container { max-width: 450px; margin: auto; width: 100%; position: relative; z-index: 1; }
+        .card { background: rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 18px; margin-bottom: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+        
         h2, h3 { margin: 0 0 12px 0; color: #df4d8f; font-size: 19px; text-align: center; }
-        label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; margin-bottom: 2px; }
+        label { display: block; text-align: left; margin-top: 12px; font-size: 13px; font-weight: bold; color: #a35d78; }
+        
+        /* 解決日期跑版：統一輸入框寬度 */
         input, select { 
-            width: 100% !important; height: 48px; padding: 10px 12px !important; margin-top: 5px; border-radius: 12px; 
-            border: 1px solid #f3a9c6; font-size: 16px; outline: none; background: white; 
+            width: 100% !important; height: 48px; padding: 10px 12px !important; margin-top: 5px; 
+            border-radius: 12px; border: 1px solid #f3a9c6; font-size: 16px; outline: none; background: white; 
+            display: block; box-shadow: none;
         }
-        input[type="date"], input[type="month"] {
-            background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23df4d8f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E") no-repeat right 12px center;
-            background-size: 18px;
+
+        .row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .row > div { flex: 1; min-width: 120px; }
+
+        .checkbox-row { 
+            display: flex; align-items: center; background: #fff2f8; padding: 14px 15px; border-radius: 12px; 
+            margin-top: 18px; border: 1px solid #f3a9c6; cursor: pointer; 
         }
-        .row { display: flex; gap: 10px; }
-        .row > div { flex: 1; }
-        .checkbox-row { display: flex; align-items: center; background: #fff2f8; padding: 14px 15px; border-radius: 12px; margin-top: 18px; border: 1px solid #f3a9c6; cursor: pointer; }
-        .checkbox-row input[type="checkbox"] { width: 22px !important; height: 22px !important; margin: 0 10px 0 0 !important; appearance: checkbox !important; }
-        .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; text-align: center; margin: 8px 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .amount-changed { transform: scale(1.1); color: #ff1a75; }
+        .checkbox-row input[type="checkbox"] { width: 22px !important; height: 22px !important; margin: 0 10px 0 0 !important; appearance: checkbox !important; -webkit-appearance: checkbox !important; }
+
+        .total-amount { font-size: 32px; font-weight: bold; color: #ff6fa9; text-align: center; margin: 8px 0; }
         .reimburse-box { background: #fdf2ff; border-radius: 12px; padding: 15px; margin-top: 15px; border: 1px solid #e0c3fc; }
         .reimburse-list { font-size: 11px; color: #6c5ce7; margin-top: 5px; line-height: 1.4; max-height: 100px; overflow-y: auto; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 0 #db5a8b; transition: 0.2s; }
+        
+        button { width: 100%; padding: 15px; border: none; border-radius: 15px; background: #ff6fa9; color: white; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 0 #db5a8b; }
         button:active { transform: translateY(2px); box-shadow: 0 2px 0 #db5a8b; }
+
         .filter-row { display: flex; gap: 8px; margin-bottom: 12px; }
         .filter-row select { height: 40px; font-size: 13px; margin-top: 0; padding: 5px 8px !important; }
-        .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.4s ease-out forwards; opacity: 0; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
-        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; color: white; font-weight: bold; margin-bottom: 4px; background: #ff6fa9; }
+
+        .record-item { background: white; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; color: white; font-weight: bold; margin-bottom: 4px; }
     </style>
 </head>
 <body>
 
+<div id="heart-bg"></div>
+
 <div class="container">
     <div class="card">
         <h3>📅 歷史統計</h3>
+        <label>檢視月份</label>
         <input type="month" id="view-month">
         <div id="stats-board">載入中...</div>
     </div>
@@ -52,13 +75,15 @@
         <h2>💕 新增紀錄</h2>
         <label>消費日期</label>
         <input id="custom-date" type="date">
+        
         <label>誰付錢</label>
         <select id="payer"><option value="小精靈">🧚 小精靈</option><option value="西瓜">🍉 西瓜</option></select>
-        <label>項目名稱</label>
-        <input id="title" type="text" placeholder="輸入項目">
         
-        <label>金額 (退款請打負數，如 -100)</label>
-        <input id="amount" type="number" step="any" inputmode="decimal" placeholder="0">
+        <label>項目名稱</label>
+        <input id="title" type="text" placeholder="例如：買禮物">
+
+        <label>金額 (可輸入負號 - )</label>
+        <input id="amount" type="text" inputmode="hyphenated-decimal" placeholder="0">
 
         <div class="row">
             <div>
@@ -75,10 +100,12 @@
                 <select id="need_type"><option value="需要">✅ 需要</option><option value="想要">🎁 想要</option></select>
             </div>
         </div>
+
         <div class="checkbox-row" onclick="document.getElementById('is_reimburse').click();">
             <input type="checkbox" id="is_reimburse" onclick="event.stopPropagation();">
             <span style="font-weight:bold; color:#df4d8f;">這筆是「待請款」</span>
         </div>
+
         <button id="addBtn" onclick="handleAddRecord()">✨ 新增紀錄 ✨</button>
     </div>
 
@@ -99,23 +126,42 @@
 </div>
 
 <script>
+    // 背景愛心生成
+    function createHearts() {
+        const bg = document.getElementById('heart-bg');
+        for (let i = 0; i < 15; i++) {
+            const heart = document.createElement('div');
+            heart.className = 'heart';
+            heart.innerText = '❤';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDelay = Math.random() * 5 + 's';
+            heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
+            bg.appendChild(heart);
+        }
+    }
+    createHearts();
+
     const SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxi8QHWjSitWQJUVTLntehHUYbm-QwyNp6c296bvCDxJIoc_k-Pq-Cu8R21JAiJx26n/exec";
-
     const db = window.supabase.createClient(SB_URL, SB_KEY);
     let localData = [];
+
+    // 限制金額輸入只能是數字與負號
+    document.getElementById('amount').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9.-]/g, '');
+    });
 
     async function handleAddRecord() {
         const btn = document.getElementById('addBtn');
         const amountStr = document.getElementById('amount').value;
-        if (amountStr === "" || btn.disabled) return alert("請輸入金額！💸");
-        const amount = Number(amountStr);
-
+        if (!amountStr || btn.disabled) return alert("金額寫一下啦！💸");
+        
         btn.disabled = true;
         btn.innerText = "處理中...";
 
         try {
+            const amount = parseFloat(amountStr);
             const title = document.getElementById('title').value || "未命名";
             const payer = document.getElementById('payer').value;
             const category = document.getElementById('category').value;
@@ -132,18 +178,21 @@
             if (error) throw error;
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
 
+            // LINE 通知內容
+            let msg = `\n🔔 新紀錄！\n項目：${title}\n金額：$${amount}\n付款人：${payer}\n分類：${category} (${needType})`;
+            if (isReimburse) msg += `\n⚠️ 【這筆是待請款】`;
+            if (category === "罰款") msg += `\n👊 揍你喔！`;
+
             if (isReimburse || category === "罰款") {
-                let msg = `\n🔔 新紀錄！\n項目：${title}\n金額：$${amount}\n付款人：${payer}\n分類：${category} (${needType})`;
-                if (isReimburse) msg += `\n⚠️ 【這筆是待請款】`;
                 fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ message: msg }) });
             }
 
-            alert("✅ 新增成功！");
+            alert("✅ 成功！" + (category === "罰款" ? "\n\n👊 揍你喔！" : ""));
             document.getElementById('amount').value = "";
             document.getElementById('title').value = "";
             document.getElementById('is_reimburse').checked = false;
             await refresh();
-        } catch (err) { alert("失敗：" + err.message); }
+        } catch (err) { alert("出錯了：" + err.message); }
         finally { btn.disabled = false; btn.innerText = "✨ 新增紀錄 ✨"; }
     }
 
@@ -175,10 +224,10 @@
             </div>
             <div class="reimburse-box">
                 <div style="display:flex; justify-content: space-between; gap:10px;">
-                    <div style="flex:1;"><b>🧚 待領</b><br><span>$${Math.round(s.elf_r)}</span><div class="reimburse-list">${toTxt(s.elfList)}</div></div>
-                    <div style="flex:1;"><b>🍉 待領</b><br><span>$${Math.round(s.water_r)}</span><div class="reimburse-list">${toTxt(s.waterList)}</div></div>
+                    <div style="flex:1;"><b>🧚 待領</b><br><span style="font-size:18px;">$${Math.round(s.elf_r)}</span><div class="reimburse-list">${toTxt(s.elfList)}</div></div>
+                    <div style="flex:1;"><b>🍉 待領</b><br><span style="font-size:18px;">$${Math.round(s.water_r)}</span><div class="reimburse-list">${toTxt(s.waterList)}</div></div>
                 </div>
-                <button style="font-size:14px; padding:10px; margin-top:12px; height:auto;" onclick="settleAll()">💰 結清並反轉身分</button>
+                <button style="font-size:14px; padding:10px; margin-top:12px;" onclick="settleAll()">💰 結清並反轉身分</button>
             </div>
         `;
         renderList();
@@ -188,7 +237,6 @@
         const pFilter = document.getElementById('filter-payer').value;
         const cFilter = document.getElementById('filter-category').value;
         const [year, month] = document.getElementById('view-month').value.split('-').map(Number);
-
         const filtered = localData.filter(i => {
             const d = new Date(i.created_at);
             const mMatch = d.getFullYear() === year && (d.getMonth() + 1) === month;
@@ -196,13 +244,12 @@
             const cMatch = (cFilter === "全部") ? true : (cFilter === "待請款" ? i.is_reimburse : i.category === cFilter);
             return mMatch && pMatch && cMatch;
         });
-
-        document.getElementById('record-list').innerHTML = filtered.map((i, idx) => `
-            <div class="record-item" style="animation-delay: ${idx * 0.05}s; ${i.is_settled ? 'opacity:0.5' : ''}">
-                <div style="flex:1; min-width:0;">
+        document.getElementById('record-list').innerHTML = filtered.map(i => `
+            <div class="record-item" style="${i.is_settled ? 'opacity:0.5' : ''}">
+                <div style="flex:1;">
                     <span class="tag" style="background:${i.payer.trim() === '小精靈' ? '#ff6fa9' : '#4da6ff'}">${i.payer}</span>
                     <span class="tag" style="background:#a35d78">${i.need_type || '需要'}</span>
-                    <div style="font-weight:bold; font-size:15px;">${i.title}</div>
+                    <div style="font-weight:bold;">${i.title}</div>
                     <div style="font-size:11px; color:#999;">${i.category} | ${new Date(i.created_at).toLocaleDateString()}</div>
                 </div>
                 <div style="text-align:right;">
@@ -213,9 +260,9 @@
     }
 
     async function settleAll() {
-        if (!confirm("確定要結清嗎？")) return;
+        if (!confirm("確定要結清所有待請款嗎？")) return;
         const { data: targets } = await db.from('expenses').select('*').eq('is_reimburse', true).eq('is_settled', false);
-        if (!targets || targets.length === 0) return alert("沒有待請款！");
+        if (!targets || targets.length === 0) return alert("沒有東西可以結清！");
         for (const item of targets) {
             const nextPayer = (item.payer.trim() === "小精靈") ? "西瓜" : "小精靈";
             await db.from('expenses').update({ payer: nextPayer, is_settled: true, title: `(結清) ${item.title}` }).eq('id', item.id);

@@ -53,7 +53,7 @@
             border: 1px solid white; box-sizing: border-box; width: 100%;
         }
 
-        /* 解決突出問題 */
+        /* 輸入框一致化 */
         .input-group { margin-top: 15px; width: 100%; box-sizing: border-box; }
         input, select { 
             width: 100% !important; height: 52px; border-radius: 18px;
@@ -87,15 +87,15 @@
 
         .total-amount { font-size: 45px; font-weight: 900; color: var(--primary); text-align: center; }
 
-        /* 明細項目標籤 */
+        /* 明細標籤 */
         .record-item { 
             background: white; border-radius: 20px; padding: 18px; margin-top: 12px;
             border-left: 10px solid #eee; display: flex; justify-content: space-between; align-items: center;
         }
         .tag { padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; color: white; display: inline-block; margin-right: 4px; }
-        .tag-cat { background: #ffd93d; color: #4a313d; } /* 分類標籤：顯眼的黃色 */
-        .tag-need { background: #b08bb2; } /* 想要需要標籤 */
-        .tag-reim { background: #7b61ff; } /* 待請款標籤 */
+        .tag-cat { background: #ffd93d; color: #4a313d; }
+        .tag-need { background: #b08bb2; }
+        .tag-reim { background: #7b61ff; }
     </style>
 </head>
 <body>
@@ -124,7 +124,7 @@
         <div class="input-group"><label>金額 (退款打負數 - )</label><input id="amount" type="text" inputmode="hyphenated-decimal" placeholder="0"></div>
         <div class="row" style="display:flex; gap:10px;">
             <div class="input-group" style="flex:1;">
-                <label>分類 (13項)</label>
+                <label>分類</label>
                 <select id="category">
                     <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option><option value="住宿">🏨 住宿</option>
                     <option value="交通">🚗 交通</option><option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
@@ -146,28 +146,33 @@
 <div id="list-page" class="container">
     <div class="card">
         <h3 style="margin-bottom: 15px;">📜 完整明細清單</h3>
-        <div style="display:flex; gap:10px; margin-bottom: 15px;">
-            <select id="filter-payer" onchange="renderList()" style="flex:1;"><option value="全部">👤 全部</option><option value="小精靈">🧚 小精靈</option><option value="西瓜">🍉 西瓜</option></select>
-            <select id="filter-category" onchange="renderList()" style="flex:1;"><option value="全部">📂 全分類</option><option value="待請款">💸 待請款</option></select>
-            <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option><option value="住宿">🏨 住宿</option>
-            <option value="交通">🚗 交通</option><option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
-            <option value="醫療">🏥 醫療</option><option value="保養美體">💆 保養美體</option><option value="儲值">💵 儲值</option>
-            <option value="罰款">🚔 罰款</option><option value="狗勾">🐶 狗勾</option><option value="爸爸贊助">🎁 爸爸贊助</option>
-            <option value="其他">✨ 其他</option>
+        <div style="display:flex; flex-direction: column; gap:10px; margin-bottom: 15px;">
+            <select id="filter-payer" onchange="renderList()">
+                <option value="全部">👤 全部付款人</option>
+                <option value="小精靈">🧚 小精靈</option>
+                <option value="西瓜">🍉 西瓜</option>
+            </select>
+            <select id="filter-category" onchange="renderList()">
+                <option value="全部">📂 全部分類</option>
+                <option value="待請款">💸 待請款項目</option>
+                <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option><option value="住宿">🏨 住宿</option>
+                <option value="交通">🚗 交通</option><option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
+                <option value="醫療">🏥 醫療</option><option value="保養美體">💆 保養美體</option><option value="儲值">💵 儲值</option>
+                <option value="罰款">🚔 罰款</option><option value="狗勾">🐶 狗勾</option><option value="爸爸贊助">🎁 爸爸贊助</option>
+                <option value="其他">✨ 其他</option>
+            </select>
         </div>
         <div id="record-list"></div>
     </div>
 </div>
 
 <script>
-    // --- 核心邏輯確認 ---
     const SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxi8QHWjSitWQJUVTLntehHUYbm-QwyNp6c296bvCDxJIoc_k-Pq-Cu8R21JAiJx26n/exec";
     const db = window.supabase.createClient(SB_URL, SB_KEY);
     let localData = [];
 
-    // 愛心飄飄
     function initHearts() {
         const container = document.getElementById('heart-container');
         setInterval(() => {
@@ -191,7 +196,6 @@
         else { document.getElementById('tab2').classList.add('active'); renderList(); }
     }
 
-    // [核心修正] 明細渲染邏輯：補充分類顯示
     function renderList() {
         const pFilter = document.getElementById('filter-payer').value;
         const cFilter = document.getElementById('filter-category').value;
@@ -205,12 +209,13 @@
             return mMatch && pMatch && cMatch;
         });
 
-        document.getElementById('record-list').innerHTML = filtered.map(i => `
+        document.getElementById('record-list').innerHTML = filtered.length ? filtered.map(i => `
             <div class="record-item" style="border-left-color: ${i.payer.trim() === '小精靈' ? '#ff6fa9' : '#4da6ff'}">
                 <div style="flex:1;">
                     <div style="margin-bottom: 6px;">
                         <span class="tag" style="background:${i.payer.trim() === '小精靈' ? '#ff6fa9' : '#4da6ff'}">${i.payer}</span>
-                        <span class="tag tag-cat">${i.category}</span> <span class="tag tag-need">${i.need_type || '需要'}</span>
+                        <span class="tag tag-cat">${i.category}</span>
+                        <span class="tag tag-need">${i.need_type || '需要'}</span>
                         ${i.is_reimburse ? '<span class="tag tag-reim">待請款</span>' : ''}
                     </div>
                     <div style="font-weight:900; font-size:17px;">${i.title}</div>
@@ -219,7 +224,7 @@
                 <div style="text-align:right; font-size:20px; font-weight:900; color:${i.amount < 0 ? '#2ecc71' : '#df4d8f'}">
                     $${Math.round(i.amount).toLocaleString()}
                 </div>
-            </div>`).join('');
+            </div>`).join('') : '<div style="text-align:center; padding:20px; color:#999;">這個月還空空如也唷 🐾</div>';
     }
 
     async function handleAddRecord() {

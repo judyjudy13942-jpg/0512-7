@@ -30,7 +30,7 @@
         .filter-row select { height: 38px; font-size: 13px; margin-top: 0; }
         .record-item { background: #fff2f8; border-radius: 15px; padding: 12px; margin-top: 10px; border-left: 6px solid #ff97be; display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.4s ease-out forwards; opacity: 0; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
-        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; color: white; font-weight: bold; margin-bottom: 4px; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; color: white; font-weight: bold; margin-bottom: 4px; background: #ff6fa9; }
         .tag-need { background: #a35d78; }
     </style>
 </head>
@@ -48,61 +48,43 @@
         <label>日期</label>
         <input id="custom-date" type="date">
         <label>誰付錢</label>
-        <select id="payer">
-            <option value="小精靈">🧚 小精靈</option>
-            <option value="西瓜">🍉 西瓜</option>
-        </select>
+        <select id="payer"><option value="小精靈">🧚 小精靈</option><option value="西瓜">🍉 西瓜</option></select>
         <label>項目名稱</label>
-        <input id="title" type="text" placeholder="例如：好吃的晚餐">
+        <input id="title" type="text" placeholder="輸入項目">
         <label>金額 (可輸入負數/0)</label>
         <input id="amount" type="number" step="any" placeholder="0">
-        
         <div class="row">
             <div>
                 <label>分類</label>
                 <select id="category">
-                    <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option>
-                    <option value="住宿">🏨 住宿</option><option value="交通">🚗 交通</option>
-                    <option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
-                    <option value="醫療">🏥 醫療</option><option value="儲值">💵 儲值</option>
-                    <option value="罰款">🚔 罰款</option><option value="狗勾">🐶 狗勾</option>
-                    <option value="爸爸贊助">🎁 爸爸贊助</option><option value="其他">✨ 其他</option>
+                    <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option><option value="住宿">🏨 住宿</option>
+                    <option value="交通">🚗 交通</option><option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
+                    <option value="醫療">🏥 醫療</option><option value="儲值">💵 儲值</option><option value="罰款">🚔 罰款</option>
+                    <option value="狗勾">🐶 狗勾</option><option value="爸爸贊助">🎁 爸爸贊助</option><option value="其他">✨ 其他</option>
                 </select>
             </div>
             <div>
                 <label>類型</label>
-                <select id="need_type">
-                    <option value="需要">✅ 需要</option>
-                    <option value="想要">🎁 想要</option>
-                </select>
+                <select id="need_type"><option value="需要">✅ 需要</option><option value="想要">🎁 想要</option></select>
             </div>
         </div>
-
         <div class="checkbox-row" onclick="document.getElementById('is_reimburse').click();">
             <input type="checkbox" id="is_reimburse" onclick="event.stopPropagation();">
             <span style="font-weight:bold; color:#df4d8f;">這筆是「待請款」</span>
         </div>
-
         <button id="addBtn" onclick="handleAddRecord()">✨ 新增紀錄 ✨</button>
     </div>
 
     <div class="card">
         <h3>📜 歷史明細</h3>
         <div class="filter-row">
-            <select id="filter-payer">
-                <option value="全部">👤 全部</option>
-                <option value="小精靈">🧚 小精靈</option>
-                <option value="西瓜">🍉 西瓜</option>
-            </select>
+            <select id="filter-payer"><option value="全部">👤 全部</option><option value="小精靈">🧚 小精靈</option><option value="西瓜">🍉 西瓜</option></select>
             <select id="filter-category">
-                <option value="全部">📂 全部</option>
-                <option value="待請款">💸 待請款</option>
-                <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option>
-                <option value="住宿">🏨 住宿</option><option value="交通">🚗 交通</option>
-                <option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
-                <option value="醫療">🏥 醫療</option><option value="儲值">💵 儲值</option>
-                <option value="罰款">🚔 罰款</option><option value="狗勾">🐶 狗勾</option>
-                <option value="爸爸贊助">🎁 爸爸贊助</option><option value="其他">✨ 其他</option>
+                <option value="全部">📂 全部</option><option value="待請款">💸 待請款</option>
+                <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option><option value="住宿">🏨 住宿</option>
+                <option value="交通">🚗 交通</option><option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
+                <option value="醫療">🏥 醫療</option><option value="儲值">💵 儲值</option><option value="罰款">🚔 罰款</option>
+                <option value="狗勾">🐶 狗勾</option><option value="爸爸贊助">🎁 爸爸贊助</option><option value="其他">✨ 其他</option>
             </select>
         </div>
         <div id="record-list"></div>
@@ -120,10 +102,7 @@
     async function handleAddRecord() {
         const btn = document.getElementById('addBtn');
         const amount = document.getElementById('amount').value;
-        if (amount === "") {
-            alert("請輸入金額！💸");
-            return;
-        }
+        if (amount === "") { alert("請輸入金額！💸"); return; }
         if (btn.disabled) return;
 
         btn.disabled = true;
@@ -133,55 +112,44 @@
             const title = document.getElementById('title').value || "未命名";
             const payer = document.getElementById('payer').value;
             const category = document.getElementById('category').value;
+            const needType = document.getElementById('need_type').value;
             const isReimburse = document.getElementById('is_reimburse').checked;
             const customDate = document.getElementById('custom-date').value;
             const finalDate = `${customDate}T${new Date().toTimeString().split(' ')[0]}.000Z`;
 
             const { error } = await db.from('expenses').insert([{
                 title, amount: Number(amount), payer, category, 
-                need_type: document.getElementById('need_type').value, 
-                is_reimburse: isReimburse, is_settled: false, created_at: finalDate
+                need_type: needType, is_reimburse: isReimburse, is_settled: false, created_at: finalDate
             }]);
 
             if (error) throw error;
-
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ff6fa9', '#6c5ce7'] });
 
             let egg = "";
+            let msg = `\n🔔 新紀錄！\n項目：${title}\n金額：$${amount}\n付款人：${payer}\n分類：${category} (${needType})`;
+            if (isReimburse) msg += `\n⚠️ 【這筆是待請款】`;
+            if (category === "罰款") { msg += `\n👊 揍你喔！`; egg = " \n\n👊 揍你喔！看你下次還敢不敢！"; }
+
             if (isReimburse || category === "罰款") {
-                let msg = `\n🔔 新紀錄！\n項目：${title}\n金額：$${amount}\n付款人：${payer}`;
-                if (category === "罰款") { 
-                    msg += `\n👊 揍你喔！`; 
-                    egg = " \n\n👊 揍你喔！看你下次還敢不敢！"; 
-                }
                 fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ message: msg }) });
             }
 
             alert("✅ 新增成功！" + egg);
             document.getElementById('amount').value = "";
             document.getElementById('title').value = "";
+            document.getElementById('is_reimburse').checked = false;
             await refresh();
-        } catch (err) { 
-            alert("❌ 失敗：" + err.message); 
-        } finally { 
-            btn.disabled = false; 
-            btn.innerText = "✨ 新增紀錄 ✨"; 
-        }
+        } catch (err) { alert("❌ 失敗：" + err.message); }
+        finally { btn.disabled = false; btn.innerText = "✨ 新增紀錄 ✨"; }
     }
 
     async function refresh() {
         const amtDisplay = document.querySelector('.total-amount');
         if (amtDisplay) amtDisplay.classList.add('amount-changed');
-
         const monthVal = document.getElementById('view-month').value;
         const [year, month] = monthVal.split('-').map(Number);
         const { data, error } = await db.from('expenses').select('*').order('created_at', { ascending: false });
-        
-        if (error) {
-            console.error(error);
-            return;
-        }
-        
+        if (error) return;
         localData = data || [];
 
         let s = { elf: 0, water: 0, total: 0, elf_r: 0, water_r: 0, elfList: [], waterList: [] };
@@ -199,7 +167,6 @@
         });
 
         const toTxt = (list) => list.length ? list.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無';
-        
         document.getElementById('stats-board').innerHTML = `
             <div class="total-amount">$${Math.round(s.total)}</div>
             <div style="display:flex; justify-content: space-around; font-size:13px; color:#888; margin-bottom:10px;">
@@ -215,18 +182,15 @@
             </div>
         `;
         renderList();
-        setTimeout(() => { 
-            const nd = document.querySelector('.total-amount'); 
-            if(nd) nd.classList.remove('amount-changed'); 
-        }, 400);
+        setTimeout(() => { const nd = document.querySelector('.total-amount'); if(nd) nd.classList.remove('amount-changed'); }, 400);
     }
 
     function renderList() {
         const pFilter = document.getElementById('filter-payer').value;
         const cFilter = document.getElementById('filter-category').value;
-        const monthInput = document.getElementById('view-month').value;
-        if (!monthInput) return;
-        const [year, month] = monthInput.split('-').map(Number);
+        const monthVal = document.getElementById('view-month').value;
+        if (!monthVal) return;
+        const [year, month] = monthVal.split('-').map(Number);
 
         const filtered = localData.filter(i => {
             const d = new Date(i.created_at);
@@ -256,41 +220,24 @@
         if (!confirm("確定要結清所有待請款嗎？")) return;
         try {
             const { data: targets } = await db.from('expenses').select('*').eq('is_reimburse', true).eq('is_settled', false);
-            if (!targets || targets.length === 0) {
-                alert("沒有待請款可以結清喔！");
-                return;
-            }
+            if (!targets || targets.length === 0) { alert("沒有待請款！"); return; }
             for (const item of targets) {
                 const nextPayer = (item.payer.trim() === "小精靈") ? "西瓜" : "小精靈";
                 await db.from('expenses').update({ payer: nextPayer, is_settled: true, title: `(結清) ${item.title}` }).eq('id', item.id);
             }
-            alert("結清成功！");
-            await refresh();
-        } catch (e) {
-            alert("結清失敗");
-        }
-    } // 這裡檢查是否有成對
+            alert("結清成功！"); await refresh();
+        } catch (e) { alert("結清失敗"); }
+    }
 
     window.onload = () => {
         const d = new Date();
-        const monthInput = document.getElementById('view-month');
-        const dateInput = document.getElementById('custom-date');
-        
-        if (monthInput) {
-            monthInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            monthInput.onchange = refresh;
-        }
-        if (dateInput) {
-            dateInput.value = d.toISOString().split('T')[0];
-        }
-        
-        const filterP = document.getElementById('filter-payer');
-        const filterC = document.getElementById('filter-category');
-        if (filterP) filterP.onchange = renderList;
-        if (filterC) filterC.onchange = renderList;
-        
+        document.getElementById('view-month').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('custom-date').value = d.toISOString().split('T')[0];
+        document.getElementById('view-month').onchange = refresh;
+        document.getElementById('filter-payer').onchange = renderList;
+        document.getElementById('filter-category').onchange = renderList;
         refresh();
-    }; // 這裡確保是 }; 結尾
+    };
 </script>
 </body>
 </html>

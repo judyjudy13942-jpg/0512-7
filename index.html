@@ -3,127 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>✨ 小精靈 & 西瓜 記帳本本 ✨</title>
+    <title>💎小精靈&西瓜 記帳本本💎</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --primary: #ff6fa9;
             --secondary: #df4d8f;
-            --bg-gradient: linear-gradient(135deg, #fff5f8 0%, #ffe3ef 100%);
-            --glass: rgba(255, 255, 255, 0.82);
-            --shadow: 0 10px 30px rgba(255, 140, 180, 0.2);
+            --bg: #fff5f8;
+            --card: #ffffff;
         }
 
         body {
-            margin: 0; padding: 10px;
-            background: var(--bg-gradient);
-            min-height: 100vh;
-            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-            color: #5d3b4a;
-            display: flex; flex-direction: column; align-items: center;
+            margin: 0; padding: 12px; background: var(--bg);
+            font-family: -apple-system, "Noto Sans TC", sans-serif;
+            color: #4a313d; display: flex; flex-direction: column; align-items: center;
             overflow-x: hidden;
         }
 
-        /* 景深愛心背景 */
-        #heart-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-        .heart { position: absolute; bottom: -50px; animation: floatUp linear infinite; filter: blur(0.6px); }
-        @keyframes floatUp {
-            0% { transform: translateY(0) rotate(0deg) scale(0.6); opacity: 0; }
-            20% { opacity: 0.6; }
-            100% { transform: translateY(-110vh) rotate(360deg) scale(1.2); opacity: 0; }
-        }
+        .container { width: 100%; max-width: 420px; z-index: 1; box-sizing: border-box; }
 
-        .container { width: 100%; max-width: 420px; position: relative; z-index: 1; }
-
-        /* 卡片設計 */
         .card { 
-            background: var(--glass);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border-radius: 28px; padding: 20px; margin-bottom: 20px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            box-sizing: border-box;
+            background: var(--card); border-radius: 28px; padding: 22px; 
+            margin-bottom: 20px; box-shadow: 0 10px 25px rgba(255, 182, 193, 0.2);
+            border: 1px solid rgba(255, 105, 180, 0.1);
+            box-sizing: border-box; width: 100%;
         }
 
         h2, h3 { margin: 0 0 18px 0; color: var(--secondary); font-size: 20px; text-align: center; font-weight: 800; }
 
         .input-group { margin-top: 12px; width: 100%; box-sizing: border-box; }
-        label { font-size: 13px; font-weight: 700; color: #8e6d7a; margin-bottom: 6px; display: block; margin-left: 4px; }
+        label { font-size: 13px; font-weight: 700; color: #a38d97; margin-bottom: 6px; display: block; margin-left: 4px; }
 
-        /* 輸入框 - 徹底解決跑版 */
+        /* 核心修復：防止框框向右突出 */
         input, select { 
-            width: 100% !important; height: 48px; border-radius: 14px;
-            border: 2px solid rgba(249, 197, 209, 0.4); font-size: 16px;
-            background: rgba(255, 255, 255, 0.8); padding: 0 12px !important;
+            width: 100% !important; height: 50px; border-radius: 14px;
+            border: 2px solid #f2f2f2; font-size: 16px;
+            background: #fff; padding: 0 14px !important;
             box-sizing: border-box !important; color: #4a313d;
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            outline: none; -webkit-appearance: none;
+            transition: all 0.2s; outline: none; -webkit-appearance: none;
         }
-        input:focus { border-color: var(--primary); background: white; }
+        input:focus { border-color: var(--primary); background: #fffcfd; }
 
         .row { display: flex; gap: 10px; width: 100%; box-sizing: border-box; }
         .row > .input-group { flex: 1; min-width: 0; }
 
-        .total-amount { font-size: 38px; font-weight: 900; color: var(--primary); text-align: center; margin: 8px 0; }
+        .total-amount { font-size: 42px; font-weight: 900; color: var(--primary); text-align: center; margin: 5px 0; }
 
-        /* 待請款區塊 */
-        .reimburse-box { 
-            background: linear-gradient(145deg, #fdf8ff, #f7efff);
-            border: 2px solid #e0c3fc; border-radius: 18px;
-            padding: 15px; margin-top: 15px;
-        }
-        .reimburse-list { font-size: 11px; color: #7b61ff; margin-top: 8px; line-height: 1.5; max-height: 100px; overflow-y: auto; }
-
-        /* 勾選框 */
+        /* 待請款勾選框：點擊變粉紅+勾勾 */
         .checkbox-row { 
-            display: flex; align-items: center; background: rgba(255, 255, 255, 0.4);
-            padding: 14px; border-radius: 15px; margin-top: 18px; 
-            border: 2px dashed #f3a9c6; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; background: #fff9fb;
+            padding: 16px; border-radius: 16px; margin-top: 20px; 
+            border: 2.5px dashed #f3a9c6; cursor: pointer; transition: 0.2s;
         }
+        .checkbox-row:active { transform: scale(0.98); }
+
         #is_reimburse { 
-            width: 24px !important; height: 24px !important; appearance: none; -webkit-appearance: none;
-            border: 2px solid #f3a9c6; border-radius: 6px; background: white; 
-            margin-right: 10px !important; position: relative; transition: 0.3s; flex-shrink: 0;
+            width: 26px !important; height: 26px !important; appearance: none; -webkit-appearance: none;
+            border: 2px solid #f3a9c6; border-radius: 8px; background: white; 
+            margin-right: 12px !important; position: relative; transition: all 0.3s; flex-shrink: 0;
         }
         #is_reimburse:checked { background: var(--primary); border-color: var(--primary); }
-        #is_reimburse:checked::after { content: '✓'; color: white; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-weight: bold; }
+        #is_reimburse:checked::after { 
+            content: '✓'; color: white; position: absolute; left: 50%; top: 50%; 
+            transform: translate(-50%, -50%); font-weight: bold; font-size: 16px;
+        }
 
+        /* 漸層大按鈕 */
         button#addBtn { 
-            width: 100%; height: 54px; border: none; border-radius: 18px;
+            width: 100%; height: 58px; border: none; border-radius: 18px;
             background: linear-gradient(135deg, #ff85b9 0%, #df4d8f 100%);
-            color: white; font-weight: bold; font-size: 18px; cursor: pointer;
-            margin-top: 20px; box-shadow: 0 6px 15px rgba(223, 77, 143, 0.3);
+            color: white; font-weight: bold; font-size: 19px; cursor: pointer;
+            margin-top: 22px; box-shadow: 0 8px 20px rgba(223, 77, 143, 0.3);
             transition: 0.3s;
         }
-        button#addBtn:active { transform: scale(0.97); }
+        button#addBtn:active { transform: translateY(2px) scale(0.96); }
 
-        /* 列表樣式 */
+        /* 分類色彩標籤 */
         .record-item { 
-            background: rgba(255, 255, 255, 0.65); border-radius: 18px; padding: 14px; margin-top: 12px;
-            border-left: 6px solid var(--primary); display: flex; justify-content: space-between; align-items: center;
+            background: white; border-radius: 20px; padding: 16px; margin-top: 12px;
+            border-left: 8px solid #eee; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         }
-        .tag { padding: 3px 9px; border-radius: 8px; font-size: 10px; font-weight: 700; color: white; margin-bottom: 4px; display: inline-block; }
-        .tag-payer-elf { background: #ff7bac; }
-        .tag-payer-water { background: #60a5fa; }
-        .tag-need { background: #b08bb2; }
+        .tag { padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; color: white; display: inline-block; margin-bottom: 4px; }
+        
+        /* 待請款看板 */
+        .reimburse-box { 
+            background: #fdf5ff; border: 2px solid #e0c3fc; 
+            border-radius: 20px; padding: 18px; margin-top: 18px;
+        }
     </style>
 </head>
 <body>
 
-<div id="heart-container"></div>
-
 <div class="container">
     <div class="card">
-        <h3>📊 統計看板</h3>
-        <div class="input-group">
-            <input type="month" id="view-month">
-        </div>
+        <h3>📊 戀愛統計看板</h3>
+        <input type="month" id="view-month">
         <div id="stats-board">載入中...</div>
     </div>
 
     <div class="card">
-        <h2>💖 記下一筆</h2>
+        <h2>✨ 記下一筆浪漫 ✨</h2>
         <div class="input-group"><label>消費日期</label><input id="custom-date" type="date"></div>
         
         <div class="row">
@@ -131,7 +112,7 @@
             <div class="input-group"><label>項目</label><input id="title" type="text" placeholder="買了什麼？"></div>
         </div>
 
-        <div class="input-group"><label>金額 (退款打負數 -)</label><input id="amount" type="text" inputmode="hyphenated-decimal" placeholder="0"></div>
+        <div class="input-group"><label>金額</label><input id="amount" type="text" inputmode="hyphenated-decimal" placeholder="0"></div>
 
         <div class="row">
             <div class="input-group">
@@ -152,7 +133,7 @@
 
         <div class="checkbox-row" onclick="document.getElementById('is_reimburse').click();">
             <input type="checkbox" id="is_reimburse" onclick="event.stopPropagation();">
-            <span style="font-weight:700; color:var(--secondary);">這筆是待請款 💸</span>
+            <span style="font-weight:700; color:var(--secondary); font-size: 15px;">這筆是待請款 💸</span>
         </div>
         <button id="addBtn" onclick="handleAddRecord()">✨ 存入本本 ✨</button>
     </div>
@@ -160,46 +141,27 @@
     <div class="card">
         <h3>📜 歷史明細</h3>
         <div class="row" style="margin-bottom: 12px;">
-            <select id="filter-payer"><option value="全部">👤 全部</option><option value="小精靈">🧚 小精靈</option><option value="西瓜">🍉 西瓜</option></select>
-            <select id="filter-category">
-                <option value="全部">📂 全分類</option><option value="待請款">💸 待請款</option>
-                <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option><option value="住宿">🏨 住宿</option>
-                <option value="交通">🚗 交通</option><option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
-                <option value="醫療">🏥 醫療</option><option value="保養美體">💆 保養美體</option><option value="儲值">💵 儲值</option>
-                <option value="罰款">🚔 罰款</option><option value="狗勾">🐶 狗勾</option><option value="爸爸贊助">🎁 爸爸贊助</option>
-                <option value="其他">✨ 其他</option>
-            </select>
+            <select id="filter-payer" style="font-size:12px;"><option value="全部">👤 全部</option><option value="小精靈">🧚 小精靈</option><option value="西瓜">🍉 西瓜</option></select>
+            <select id="filter-category" style="font-size:12px;"><option value="全部">📂 全分類</option><option value="待請款">💸 待請款</option></select>
+            <option value="餐飲">🍔 餐飲</option><option value="餐費預付">💰 餐費預付</option><option value="住宿">🏨 住宿</option>
+            <option value="交通">🚗 交通</option><option value="購物">🛍️ 購物</option><option value="電話及會員">📱 電話及會員</option>
+            <option value="醫療">🏥 醫療</option><option value="保養美體">💆 保養美體</option><option value="儲值">💵 儲值</option>
+            <option value="罰款">🚔 罰款</option><option value="狗勾">🐶 狗勾</option><option value="爸爸贊助">🎁 爸爸贊助</option>
+            <option value="其他">✨ 其他</option>
         </div>
         <div id="record-list"></div>
     </div>
 </div>
 
 <script>
-    // 1. 動態愛心
-    function initHearts() {
-        const container = document.getElementById('heart-container');
-        const icons = ['❤', '💗', '💕', '💖', '🌸'];
-        setInterval(() => {
-            const h = document.createElement('div');
-            h.className = 'heart';
-            h.innerText = icons[Math.floor(Math.random() * icons.length)];
-            h.style.left = Math.random() * 100 + 'vw';
-            h.style.fontSize = (Math.random() * 20 + 15) + 'px';
-            const dur = (Math.random() * 5 + 5);
-            h.style.animationDuration = dur + 's';
-            container.appendChild(h);
-            setTimeout(() => h.remove(), dur * 1000);
-        }, 700);
-    }
-    initHearts();
-
-    // 2. 資料庫設定
+    // Supabase 客戶端初始化 (同之前設定)
     const SB_URL = "https://dfflacypaegfmgstwzeb.supabase.co";
     const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmZmxhY3lwYWVnZm1nc3R3emViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Mzk3NjksImV4cCI6MjA5NDExNTc2OX0.RsC760Xyq1bTN6zq9Itm3rDoRLqbVgglj6EegkA5gmQ";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxi8QHWjSitWQJUVTLntehHUYbm-QwyNp6c296bvCDxJIoc_k-Pq-Cu8R21JAiJx26n/exec";
     const db = window.supabase.createClient(SB_URL, SB_KEY);
     let localData = [];
 
+    // 處理負數輸入
     document.getElementById('amount').addEventListener('input', function(e) {
         this.value = this.value.replace(/[^0-9.-]/g, '');
     });
@@ -207,11 +169,12 @@
     async function handleAddRecord() {
         const btn = document.getElementById('addBtn');
         const amtVal = document.getElementById('amount').value;
-        if (!amtVal || btn.disabled) return alert("金額沒寫喔！");
-        btn.disabled = true; btn.innerText = "寫入中...";
+        if (!amtVal || btn.disabled) return alert("金額還沒寫唷！");
+        
+        btn.disabled = true; btn.innerText = "寫入本本中...";
         try {
             const amount = parseFloat(amtVal);
-            const title = document.getElementById('title').value || "日常開銷";
+            const title = document.getElementById('title').value || "未命名支出";
             const payer = document.getElementById('payer').value;
             const category = document.getElementById('category').value;
             const needType = document.getElementById('need_type').value;
@@ -224,19 +187,22 @@
                 need_type: needType, is_reimburse: isReimburse, is_settled: false, created_at: finalDate
             }]);
             if (error) throw error;
+            
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
 
+            // LINE 通知彩蛋
             if (isReimburse || category === "罰款") {
-                let msg = `\n🔔 新紀錄！\n項目：${title}\n金額：$${amount}\n付款人：${payer}\n分類：${category} (${needType})`;
+                let msg = `\n🔔 新紀錄！\n項目：${title}\n金額：$${amount}\n付款人：${payer}\n分類：${category}`;
                 if (isReimburse) msg += `\n⚠️ 【這是待請款】`;
-                if (category === "罰款") msg += `\n👊 罰單已開，記得繳費！`;
+                if (category === "罰款") msg += `\n👊 罰單已開，西瓜/小精靈請反省！`;
                 fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ message: msg }) });
             }
-            alert(category === "罰款" ? "👊 揍你喔！已記下罰款。" : "✅ 存入本本囉！");
+
+            alert(category === "罰款" ? "👊 罰款已記下！" : "✅ 存好囉！");
             document.getElementById('amount').value = ""; document.getElementById('title').value = "";
             document.getElementById('is_reimburse').checked = false;
             await refresh();
-        } catch (err) { alert("出錯了：" + err.message); }
+        } catch (err) { alert("發生錯誤：" + err.message); }
         finally { btn.disabled = false; btn.innerText = "✨ 存入本本 ✨"; }
     }
 
@@ -259,19 +225,20 @@
                 else { s.water_r += amt; s.waterList.push(i); }
             }
         });
+
         const toTxt = (list) => list.length ? list.map(i => `· ${i.title}($${i.amount})`).join('<br>') : '無';
         document.getElementById('stats-board').innerHTML = `
             <div class="total-amount">$${Math.round(s.total).toLocaleString()}</div>
-            <div style="display:flex; justify-content: space-around; font-weight:700; font-size:14px;">
+            <div style="display:flex; justify-content: space-around; font-weight:700; font-size:14px; opacity:0.8;">
                 <span style="color:#ff6fa9">🧚 $${Math.round(s.elf).toLocaleString()}</span>
                 <span style="color:#4a90e2">🍉 $${Math.round(s.water).toLocaleString()}</span>
             </div>
             <div class="reimburse-box">
                 <div style="display:flex; justify-content: space-between; gap:12px;">
-                    <div style="flex:1;"><b style="color:#df4d8f">🧚 待請款金額</b><br><span style="font-size:20px; font-weight:900; color:#ff6fa9;">$${Math.round(s.elf_r)}</span><div class="reimburse-list">${toTxt(s.elfList)}</div></div>
-                    <div style="flex:1;"><b style="color:#4a90e2">🍉 待請款金額</b><br><span style="font-size:20px; font-weight:900; color:#4a90e2;">$${Math.round(s.water_r)}</span><div class="reimburse-list">${toTxt(s.waterList)}</div></div>
+                    <div style="flex:1;"><b style="color:#df4d8f">🧚 待請款金額</b><br><span style="font-size:20px; font-weight:900; color:#ff6fa9;">$${Math.round(s.elf_r)}</span><div style="font-size:11px; color:#999; margin-top:5px;">${toTxt(s.elfList)}</div></div>
+                    <div style="flex:1;"><b style="color:#4a90e2">🍉 待請款金額</b><br><span style="font-size:20px; font-weight:900; color:#4a90e2;">$${Math.round(s.water_r)}</span><div style="font-size:11px; color:#999; margin-top:5px;">${toTxt(s.waterList)}</div></div>
                 </div>
-                <button style="width:100%; height:40px; margin-top:12px; border-radius:12px; border:none; background:#7b61ff; color:white; font-weight:bold;" onclick="settleAll()">💰 結清回報</button>
+                <button style="width:100%; height:40px; margin-top:15px; border-radius:12px; border:none; background:#7b61ff; color:white; font-weight:bold;" onclick="settleAll()">💰 結清回報</button>
             </div>
         `;
         renderList();
@@ -281,6 +248,7 @@
         const pFilter = document.getElementById('filter-payer').value;
         const cFilter = document.getElementById('filter-category').value;
         const [year, month] = document.getElementById('view-month').value.split('-').map(Number);
+        
         const filtered = localData.filter(i => {
             const d = new Date(i.created_at);
             const mMatch = d.getFullYear() === year && (d.getMonth() + 1) === month;
@@ -288,30 +256,31 @@
             const cMatch = (cFilter === "全部") ? true : (cFilter === "待請款" ? i.is_reimburse : i.category === cFilter);
             return mMatch && pMatch && cMatch;
         });
+
         document.getElementById('record-list').innerHTML = filtered.map(i => `
-            <div class="record-item" style="${i.is_settled ? 'opacity:0.4' : ''}">
+            <div class="record-item" style="${i.is_settled ? 'opacity:0.4' : ''}; border-left-color: ${i.payer.trim() === '小精靈' ? '#ff6fa9' : '#4da6ff'}">
                 <div style="flex:1;">
-                    <span class="tag ${i.payer.trim() === '小精靈' ? 'tag-payer-elf' : 'tag-payer-water'}">${i.payer}</span>
-                    <span class="tag tag-need">${i.need_type || '需要'}</span>
-                    <div style="font-weight:800; font-size:15px; margin-top:3px;">${i.title}</div>
-                    <div style="font-size:10px; color:#a38d97;">${i.category} • ${new Date(i.created_at).toLocaleDateString()}</div>
+                    <span class="tag" style="background:${i.payer.trim() === '小精靈' ? '#ff6fa9' : '#4da6ff'}">${i.payer}</span>
+                    <span class="tag" style="background:#b08bb2">${i.need_type || '需要'}</span>
+                    <div style="font-weight:800; font-size:16px; margin-top:4px;">${i.title}</div>
+                    <div style="font-size:11px; color:#a38d97;">${i.category} • ${new Date(i.created_at).toLocaleDateString()}</div>
                 </div>
                 <div style="text-align:right;">
-                    <div style="font-size:17px; font-weight:900; color:${i.amount < 0 ? '#2ecc71' : '#df4d8f'}">$${Math.round(i.amount).toLocaleString()}</div>
-                    ${i.is_reimburse ? `<span style="font-size:9px; color:#7b61ff; border:1px solid #7b61ff; padding:1px 5px; border-radius:5px; font-weight:bold;">${i.is_settled ? '已結' : '待請'}</span>` : ''}
+                    <div style="font-size:18px; font-weight:900; color:${i.amount < 0 ? '#2ecc71' : '#df4d8f'}">$${Math.round(i.amount).toLocaleString()}</div>
+                    ${i.is_reimburse ? `<span style="font-size:10px; color:#7b61ff; border:1px solid #7b61ff; padding:2px 6px; border-radius:6px; font-weight:bold;">${i.is_settled ? '已結清' : '待請款'}</span>` : ''}
                 </div>
             </div>`).join('');
     }
 
     async function settleAll() {
-        if (!confirm("確定要結清債務嗎？")) return;
+        if (!confirm("確定要結清所有債務嗎？")) return;
         const { data: targets } = await db.from('expenses').select('*').eq('is_reimburse', true).eq('is_settled', false);
-        if (!targets || targets.length === 0) return alert("沒東西可以結清！");
+        if (!targets || targets.length === 0) return alert("目前沒有待請款項目！");
         for (const item of targets) {
             const nextPayer = (item.payer.trim() === "小精靈") ? "西瓜" : "小精靈";
             await db.from('expenses').update({ payer: nextPayer, is_settled: true, title: `(結清) ${item.title}` }).eq('id', item.id);
         }
-        alert("結清成功！辛苦了 💕"); await refresh();
+        alert("結清成功！辛苦啦 💕"); await refresh();
     }
 
     window.onload = () => {
